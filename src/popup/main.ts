@@ -71,9 +71,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     spellChecker: false,
     autofocus: true,
     status: false,
-    toolbar: ['bold', 'italic', 'strikethrough', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'table', 'horizontal-rule', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
-    shortcuts: customShortcuts
+    toolbar: ['bold', 'italic', 'strikethrough', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'table', 'horizontal-rule', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide']
   });
+
+  // Apply custom keymaps directly to CodeMirror
+  const extraKeys: Record<string, any> = {
+    "Cmd-/": toggleComment,
+    "Ctrl-/": toggleComment
+  };
+  
+  if (shortcutApply) {
+    extraKeys["Cmd-Enter"] = () => applyBtn.click();
+    extraKeys["Ctrl-Enter"] = () => applyBtn.click();
+  }
+
+  const existingKeys = easyMDE.codemirror.getOption("extraKeys") || {};
+  easyMDE.codemirror.setOption("extraKeys", { ...existingKeys, ...extraKeys });
 
   // Handle Copy
   copyBtn.addEventListener('click', () => {
