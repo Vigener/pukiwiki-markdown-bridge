@@ -129,14 +129,35 @@ export function markdownToPukiwiki(mdText: string): string {
       continue; // Skip the markdown separator row
     }
 
-    // 1. Block Elements
+    // 1. Inline Elements
+    // Process these first so that block prefixes (like `***` for headings) don't get accidentally converted by italic/bold rules.
+    
+    // Images
+    line = line.replace(/!\[.*?\]\((.*?)\)/g, '#ref($1)');
+
+    // Bold
+    // Use .+? to avoid matching empty strings which caused the `''''''` issue
+    line = line.replace(/\*\*(.+?)\*\*/g, '\'\'$1\'\'');
+    
+    // Italic
+    line = line.replace(/\*(.+?)\*/g, '\'\'\'$1\'\'\'');
+    
+    // Strikethrough
+    line = line.replace(/~~(.+?)~~/g, '%%$1%%');
+    
+    // Links
+    // [Link Name](URL)
+    line = line.replace(/\[(.*?)\]\((.*?)\)/g, '[[$1>$2]]');
+    // <URL>
+    line = line.replace(/<(http.*?)>/g, '[[$1]]');
+
+    // 2. Block Elements
 
     // Headings
     const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
       const text = headingMatch[2];
-      line = '*'.repeat(level) + ' ' + text; // Note: added space after asterisks for readability, PW tolerates it or we can omit it. Let's omit it for strict Pukiwiki:
       line = '*'.repeat(level) + text;
     }
     // Unordered Lists
@@ -177,25 +198,6 @@ export function markdownToPukiwiki(mdText: string): string {
     else if (line.startsWith('    ')) {
       line = ' ' + line.substring(4);
     }
-    // Images
-    else if (line.match(/!\[.*?\]\((.*?)\)/)) {
-      line = line.replace(/!\[.*?\]\((.*?)\)/g, '#ref($1)');
-    }
-
-    // 2. Inline Elements
-    
-    // Bold
-    line = line.replace(/\*\*(.*?)\*\*/g, '\'\'$1\'\'');
-    // Italic
-    line = line.replace(/\*(.*?)\*/g, '\'\'\'$1\'\'\'');
-    // Strikethrough
-    line = line.replace(/~~(.*?)~~/g, '%%$1%%');
-    
-    // Links
-    // [Link Name](URL)
-    line = line.replace(/\[(.*?)\]\((.*?)\)/g, '[[$1>$2]]');
-    // <URL>
-    line = line.replace(/<(http.*?)>/g, '[[$1]]');
 
     pwLines.push(line);
   }
