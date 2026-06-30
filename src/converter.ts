@@ -5,7 +5,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
   const lines = pwText.split('\n');
   const mdLines: string[] = [];
   let inTable = false;
-  const olCounters = [0, 0, 0, 0];
+  const olCounters = new Array(10).fill(0);
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
@@ -23,7 +23,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       }
     } 
     // Horizontal Rules
-    else if (line.match(/^----/) || line === '#hr') {
+    else if (line.match(/^----+\s*$/) || line === '#hr') {
       const match = line.match(/^(----+)/);
       if (match) {
         line = match[1];
@@ -391,7 +391,7 @@ export function markdownToPukiwiki(mdText: string): string {
           text = text.replace(/ ?<!--nospace-->$/, '');
         }
         
-        const depth = Math.min(3, listIndentStack.length);
+        const depth = listIndentStack.length;
         line = '-'.repeat(depth) + (noSpace ? '' : ' ') + text;
       }
     }
@@ -424,7 +424,7 @@ export function markdownToPukiwiki(mdText: string): string {
           text = text.replace(/ ?<!--nospace-->$/, '');
         }
 
-        const depth = Math.min(3, listIndentStack.length);
+        const depth = listIndentStack.length;
         line = '+'.repeat(depth) + (noSpace ? '' : ' ') + text;
       }
     }
