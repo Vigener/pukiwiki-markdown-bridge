@@ -58,6 +58,16 @@
     </label>
   </div>
 
+  <div class="form-group checkbox-group">
+    <label>
+      <input type="checkbox" id="markdownRoundtripCheck" checked>
+      PukiWiki仕様への自動丸め（ダウングレード）が発生する場合に差分を確認する
+    </label>
+    <div class="hint">
+      例: Markdown側で深さ4以上の箇条書きを書いた場合など、PukiWikiの仕様に合わせて自動的に変更される箇所がある場合に事前確認画面を表示します。
+    </div>
+  </div>
+
   <div class="form-group">
     <label for="diffConfirmMode">反映前の差分(Diff)確認:</label><br>
     <select id="diffConfirmMode" style="margin-top: 8px; padding: 4px;">

@@ -24,15 +24,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const validationCancelBtn = document.getElementById('validation-cancel-btn') as HTMLButtonElement;
   const validationActionBtn = document.getElementById('validation-action-btn') as HTMLButtonElement;
 
+  const roundtripModal = document.getElementById('roundtrip-modal') as HTMLDivElement;
+  const roundtripContent = document.getElementById('roundtrip-content') as HTMLDivElement;
+  const roundtripCancelBtn = document.getElementById('roundtrip-cancel-btn') as HTMLButtonElement;
+  const roundtripActionBtn = document.getElementById('roundtrip-action-btn') as HTMLButtonElement;
+
   if (!applyBtn || !textarea) return;
 
   const DEFAULT_URLS = ['https://example.com/pukiwiki/?Your_Team/Your_Name*'];
   const items = await chrome.storage.sync.get({ 
     allowedUrls: DEFAULT_URLS,
     shortcutApply: true,
-    diffConfirmMode: 'deletions_only'
+    diffConfirmMode: 'deletions_only',
+    markdownRoundtripCheck: true
   });
-  const { allowedUrls, shortcutApply, diffConfirmMode } = items;
+  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck } = items;
 
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const cmdKey = isMac ? '⌘+Enter' : 'Ctrl+Enter';
@@ -49,6 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   validationCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
   validationActionBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
   diffCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
+  roundtripCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
+  roundtripActionBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
 
   restoreBtn.innerHTML += `<span class="shortcut-key">${optEnterKey}</span>`;
   draftDiffBtn.innerHTML += `<span class="shortcut-key">${optShiftDKey}</span>`;
@@ -58,9 +66,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const closeModal = () => {
     diffModal.style.display = 'none';
     validationModal.style.display = 'none';
+    roundtripModal.style.display = 'none';
     modalActionCallback = null;
   };
   
+  roundtripCancelBtn.addEventListener('click', closeModal);
+  roundtripActionBtn.addEventListener('click', () => {
+    if (modalActionCallback) modalActionCallback();
+  });
   diffCancelBtn.addEventListener('click', closeModal);
   diffActionBtn.addEventListener('click', () => {
     if (modalActionCallback) modalActionCallback();
@@ -265,6 +278,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (validationModal.style.display === 'flex') {
         validationActionBtn.click();
+      } else if (roundtripModal.style.display === 'flex') {
+        roundtripActionBtn.click();
       } else if (diffModal.style.display === 'flex') {
         diffActionBtn.click();
       } else if (shortcutApply) {
@@ -275,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     } else if (e.code === 'Escape') {
-      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex') {
+      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex' || roundtripModal.style.display === 'flex') {
         e.preventDefault();
         e.stopPropagation();
         closeModal();
@@ -320,16 +335,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Handle apply button
   applyBtn.addEventListener('click', async () => {
     const currentMdText = easyMDE.value();
+    const roundedMdText = pukiwikiToMarkdown(markdownToPukiwiki(currentMdText));
     
     const validationErrors = validateMarkdown(currentMdText);
     
     const runDiffOrApply = () => {
+      // Use roundedMdText for the final diff because that's what's truly saved.
       if (diffConfirmMode === 'none') {
         performApply();
         return;
       }
       
-      const diff = Diff.diffLines(initialMdText, currentMdText);
+      const diff = Diff.diffLines(initialMdText, roundedMdText);
       const hasDeletions = diff.some(part => part.removed);
       
       if (diffConfirmMode === 'always' || (diffConfirmMode === 'deletions_only' && hasDeletions)) {
@@ -354,6 +371,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
 
+    const runRoundtripCheck = () => {
+      if (!markdownRoundtripCheck) {
+        runDiffOrApply();
+        return;
+      }
+
+      const diff = Diff.diffLines(currentMdText, roundedMdText);
+      const hasChanges = diff.some(part => part.added || part.removed);
+
+      if (hasChanges) {
+        roundtripContent.innerHTML = '';
+        diff.forEach((part) => {
+          const span = document.createElement('span');
+          span.className = part.added ? 'diff-line diff-added' :
+                           part.removed ? 'diff-line diff-removed' :
+                           'diff-line diff-unchanged';
+          span.textContent = part.value;
+          roundtripContent.appendChild(span);
+        });
+        modalActionCallback = () => {
+          closeModal();
+          runDiffOrApply();
+        };
+        roundtripModal.style.display = 'flex';
+      } else {
+        runDiffOrApply();
+      }
+    };
+
     if (validationErrors.length > 0) {
       validationContent.innerHTML = '';
       validationErrors.forEach(error => {
@@ -363,11 +409,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       modalActionCallback = () => {
         closeModal();
-        runDiffOrApply();
+        runRoundtripCheck();
       };
       validationModal.style.display = 'flex';
     } else {
-      runDiffOrApply();
+      runRoundtripCheck();
     }
   });
 });
