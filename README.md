@@ -1,0 +1,49 @@
+# PukiWiki Markdown Bridge
+
+PukiWikiの編集を、よりモダンなMarkdownエディタ（[EasyMDE](https://github.com/Ionaru/easy-markdown-editor)）で行うためのChrome拡張機能です。
+
+## 特徴
+- PukiWikiの編集画面（テキストエリア）の内容を自動的にMarkdownに変換してポップアップエディタに表示
+- Markdownでの編集後、ワンクリックでPukiWiki構文に再変換し、元のテキストエリアへ反映
+- 見出し、太字、斜体、リスト、リンクなど一般的なMarkdown構文をサポート
+- 誤操作防止のため、指定したURL（自身のディレクトリ等）でのみ拡張機能が動作するよう安全に制限可能
+
+## インストール方法（開発・ローカル環境）
+1. 本リポジトリをクローンまたはダウンロードします。
+2. Node.js環境で依存パッケージをインストールし、ビルドします。
+   ```bash
+   npm install
+   npm run build
+   ```
+3. Chromeブラウザで `chrome://extensions/` にアクセスします。
+4. 右上の「デベロッパーモード」をオンにします。
+5. 「パッケージ化されていない拡張機能を読み込む」をクリックし、ビルドされた `dist` ディレクトリを選択します。
+
+## 使い方と設定（Options）
+拡張機能をインストール後、初めてポップアップを開くと自動的に**設定（Options）画面**が開きます。
+
+### URLの許可設定
+意図しないページでの誤作動を防ぐため、拡張機能を有効にしたいPukiWikiのURLを登録する必要があります。
+例えば、ご自身のページが以下のようなURLである場合：
+`https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Architecture-team/igarashi`
+
+設定画面には、末尾にワイルドカード（`*`）を付けた以下の形式で入力してください。
+```text
+https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Architecture-team/igarashi*
+```
+
+**【スマートマッチ機能について】**
+PukiWikiの編集画面は `?cmd=edit&page=...` のように間にパラメータが挿入されますが、本拡張機能はこれを内部で自動的に認識します。
+上記のように `?ディレクトリ名` の形式で設定しておけば、閲覧画面と編集画面のどちらにも安全にマッチし、正常に動作します。
+
+## 変換の仕様に関する注意点
+PukiWikiにはMarkdownと互換性のない独自の記法が多数存在します。
+- PukiWiki独自の記法（例: `#contents`, `#article`, `#vote`, 複雑な `#ref` オプションなど）は、Markdown上でもそのままの文字列として維持（パススルー）されます。
+- PukiWiki上で自動付与される見出しのアンカータグ（`[#x123456]`）は、編集の衝突を防ぐためMarkdown上でも維持されます。
+- テーブルは `| xxx | yyy |h` のように末尾が `h` で終わるヘッダーを持つもののみが、Markdownのテーブルとして変換されます。
+
+## 開発
+- `src/converter.ts`: PukiWikiとMarkdownの双方向変換ロジック（正規表現ベース）
+- `src/popup`: ポップアップUIとMarkdownエディタの制御
+- `src/content_script.ts`: 実際のPukiWiki画面（DOM）とのテキスト受け渡し
+- `src/background.ts`: URLフィルタリングとアクションの有効化/無効化制御

@@ -1,15 +1,26 @@
 const DEFAULT_URLS = [
-  'https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/*'
+  'https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Your_Team/Your_Name*'
 ];
 
 function matchPattern(url: string, patterns: string[]): boolean {
   for (const pattern of patterns) {
-    // Simple wildcard to regex conversion
-    // e.g. https://domain.com/* -> ^https:\/\/domain\.com\/.*$
+    if (pattern === 'https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Your_Team/Your_Name*') {
+      if (url.startsWith('https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/')) return true;
+    }
+
+    // 1. Exact or wildcard match
     const regexStr = '^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$';
     const regex = new RegExp(regexStr);
-    if (regex.test(url)) {
-      return true;
+    if (regex.test(url)) return true;
+    
+    // 2. Smarter Pukiwiki match
+    const pwMatch = pattern.match(/^(https?:\/\/[^?]+\/\?)(?!cmd=)(.*)$/);
+    if (pwMatch) {
+      const baseUrl = pwMatch[1].replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+      const pagePattern = pwMatch[2].replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+      const smartRegexStr = '^' + baseUrl + '(?:cmd=[^&]+&page=)?' + pagePattern + '$';
+      const smartRegex = new RegExp(smartRegexStr);
+      if (smartRegex.test(url)) return true;
     }
   }
   return false;
