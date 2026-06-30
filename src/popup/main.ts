@@ -239,19 +239,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('keydown', (e) => {
     // Draft Banner Shortcuts
     if (draftBanner.style.display === 'flex' && validationModal.style.display !== 'flex' && diffModal.style.display !== 'flex') {
-      if (e.altKey && !e.shiftKey && e.key === 'Enter') {
+      if (e.altKey && !e.shiftKey && e.code === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
         restoreBtn.click();
         return;
       }
-      if (e.altKey && e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+      if (e.altKey && e.shiftKey && e.code === 'KeyD') {
         e.preventDefault();
         e.stopPropagation();
         draftDiffBtn.click();
         return;
       }
-      if (e.altKey && !e.shiftKey && (e.key === 'Backspace' || e.key === 'Delete')) {
+      if (e.altKey && !e.shiftKey && (e.code === 'Backspace' || e.code === 'Delete')) {
         e.preventDefault();
         e.stopPropagation();
         discardBtn.click();
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    if ((e.metaKey || e.ctrlKey) && e.code === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
       if (validationModal.style.display === 'flex') {
@@ -269,11 +269,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (shortcutApply) {
         applyBtn.click();
       }
-    } else if (e.key === 'Escape') {
+    } else if (e.code === 'Escape') {
       if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex') {
         e.preventDefault();
         e.stopPropagation();
         closeModal();
+      } else {
+        // No modals open, close the popup
+        e.preventDefault();
+        e.stopPropagation();
+        window.close();
       }
     }
   }, true); // Use capture phase to prevent double firing
