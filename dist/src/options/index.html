@@ -38,7 +38,7 @@
       display: none;
     }
   </style>
-  <script type="module" crossorigin src="/assets/options-DWhtUzFI.js"></script>
+  <script type="module" crossorigin src="/assets/options-DM8VOgZT.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
 </head>
 <body>
@@ -58,6 +58,15 @@
       <input type="checkbox" id="shortcutApply" checked>
       <code>Cmd+Enter</code> または <code>Ctrl+Enter</code> でPukiwikiに自動反映する
     </label>
+  </div>
+
+  <div class="form-group">
+    <label for="diffConfirmMode">反映前の差分(Diff)確認:</label><br>
+    <select id="diffConfirmMode" style="margin-top: 8px; padding: 4px;">
+      <option value="deletions_only">削除がある場合のみ確認する (推奨)</option>
+      <option value="always">常に確認する</option>
+      <option value="none">確認しない (即時反映)</option>
+    </select>
   </div>
 
   <button id="saveBtn">保存</button>

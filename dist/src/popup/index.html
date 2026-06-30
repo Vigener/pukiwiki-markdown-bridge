@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PukiWiki Markdown Bridge</title>
-  <script type="module" crossorigin src="/assets/popup-DtoDUXM6.js"></script>
+  <script type="module" crossorigin src="/assets/popup-CYguQ7y9.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/assets/popup-C5g0J3Jd.css">
+  <link rel="stylesheet" crossorigin href="/assets/popup-BdUhc5cv.css">
 </head>
 <body>
   <div class="container">
@@ -22,6 +22,7 @@
     <div id="draft-banner" class="draft-banner" style="display: none;">
       <span>未保存のドラフトがあります</span>
       <div class="draft-actions">
+        <button id="draft-diff-btn" class="draft-btn diff">差分を確認</button>
         <button id="draft-restore-btn" class="draft-btn restore">復元する</button>
         <button id="draft-discard-btn" class="draft-btn discard">破棄する</button>
       </div>
@@ -30,5 +31,22 @@
       <textarea id="markdown-editor"></textarea>
     </div>
   </div>
+
+  <!-- Diff Modal -->
+  <div id="diff-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="diff-modal-title">差分(Diff)の確認</h2>
+      </div>
+      <div class="modal-body">
+        <div id="diff-content" class="diff-view"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="diff-cancel-btn" class="modal-btn cancel">キャンセル</button>
+        <button id="diff-action-btn" class="modal-btn action">続行する</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

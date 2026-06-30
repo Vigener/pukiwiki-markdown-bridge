@@ -1,5 +1,6 @@
 import EasyMDE from 'easymde';
 import { pukiwikiToMarkdown, markdownToPukiwiki } from '../converter';
+import * as Diff from 'diff';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const applyBtn = document.getElementById('apply-btn') as HTMLButtonElement;
@@ -7,17 +8,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   const textarea = document.getElementById('markdown-editor') as HTMLTextAreaElement;
   
   const draftBanner = document.getElementById('draft-banner') as HTMLDivElement;
+  const draftDiffBtn = document.getElementById('draft-diff-btn') as HTMLButtonElement;
   const restoreBtn = document.getElementById('draft-restore-btn') as HTMLButtonElement;
   const discardBtn = document.getElementById('draft-discard-btn') as HTMLButtonElement;
+
+  const diffModal = document.getElementById('diff-modal') as HTMLDivElement;
+  const diffModalTitle = document.getElementById('diff-modal-title') as HTMLHeadingElement;
+  const diffContent = document.getElementById('diff-content') as HTMLDivElement;
+  const diffCancelBtn = document.getElementById('diff-cancel-btn') as HTMLButtonElement;
+  const diffActionBtn = document.getElementById('diff-action-btn') as HTMLButtonElement;
 
   if (!applyBtn || !textarea) return;
 
   const DEFAULT_URLS = ['https://example.com/pukiwiki/?Your_Team/Your_Name*'];
   const items = await chrome.storage.sync.get({ 
     allowedUrls: DEFAULT_URLS,
-    shortcutApply: true 
+    shortcutApply: true,
+    diffConfirmMode: 'deletions_only'
   });
-  const { allowedUrls, shortcutApply } = items;
+  const { allowedUrls, shortcutApply, diffConfirmMode } = items;
+
+  let modalActionCallback: (() => void) | null = null;
+  const closeModal = () => {
+    diffModal.style.display = 'none';
+    modalActionCallback = null;
+  };
+  
+  diffCancelBtn.addEventListener('click', closeModal);
+  diffActionBtn.addEventListener('click', () => {
+    if (modalActionCallback) modalActionCallback();
+  });
 
   if (allowedUrls.length === 1 && allowedUrls[0] === DEFAULT_URLS[0]) {
     chrome.runtime.openOptionsPage();
@@ -101,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   let currentTabUrl = '';
+  let initialMdText = '';
 
   // Get active tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -111,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_TEXT' });
       if (response && response.text !== undefined) {
         const mdText = pukiwikiToMarkdown(response.text);
+        initialMdText = mdText;
         easyMDE.value(mdText);
 
         // Check for drafts
@@ -122,6 +144,27 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (draftText && draftText !== mdText) {
             draftBanner.style.display = 'flex';
             
+            draftDiffBtn.onclick = () => {
+              diffModalTitle.textContent = 'ドラフトとの差分';
+              const diff = Diff.diffLines(mdText, draftText);
+              diffContent.innerHTML = '';
+              diff.forEach((part) => {
+                const span = document.createElement('span');
+                span.className = part.added ? 'diff-line diff-added' :
+                                 part.removed ? 'diff-line diff-removed' :
+                                 'diff-line diff-unchanged';
+                span.textContent = part.value;
+                diffContent.appendChild(span);
+              });
+              diffActionBtn.textContent = '復元する';
+              modalActionCallback = () => {
+                easyMDE.value(draftText);
+                draftBanner.style.display = 'none';
+                closeModal();
+              };
+              diffModal.style.display = 'flex';
+            };
+
             restoreBtn.onclick = () => {
               easyMDE.value(draftText);
               draftBanner.style.display = 'none';
@@ -154,23 +197,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 500);
   });
 
+  const performApply = async () => {
+    if (!tab || !tab.id) return;
+    const mdText = easyMDE.value();
+    const pwText = markdownToPukiwiki(mdText);
+    
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: 'SET_TEXT', text: pwText });
+      // Clear draft on successful apply
+      if (currentTabUrl) {
+        await chrome.storage.local.remove(`draft_${currentTabUrl}`);
+      }
+      window.close(); // Close popup after applying
+    } catch (e) {
+      console.error('Error applying text:', e);
+      alert('適用に失敗しました。');
+    }
+  };
+
   // Handle apply button
   applyBtn.addEventListener('click', async () => {
-    if (tab && tab.id) {
-      const mdText = easyMDE.value();
-      const pwText = markdownToPukiwiki(mdText);
-      
-      try {
-        await chrome.tabs.sendMessage(tab.id, { type: 'SET_TEXT', text: pwText });
-        // Clear draft on successful apply
-        if (currentTabUrl) {
-          await chrome.storage.local.remove(`draft_${currentTabUrl}`);
-        }
-        window.close(); // Close popup after applying
-      } catch (e) {
-        console.error('Error applying text:', e);
-        alert('適用に失敗しました。');
-      }
+    const currentMdText = easyMDE.value();
+    
+    if (diffConfirmMode === 'none') {
+      performApply();
+      return;
+    }
+    
+    const diff = Diff.diffLines(initialMdText, currentMdText);
+    const hasDeletions = diff.some(part => part.removed);
+    
+    if (diffConfirmMode === 'always' || (diffConfirmMode === 'deletions_only' && hasDeletions)) {
+      diffModalTitle.textContent = '反映する差分の確認';
+      diffContent.innerHTML = '';
+      diff.forEach((part) => {
+        const span = document.createElement('span');
+        span.className = part.added ? 'diff-line diff-added' :
+                         part.removed ? 'diff-line diff-removed' :
+                         'diff-line diff-unchanged';
+        span.textContent = part.value;
+        diffContent.appendChild(span);
+      });
+      diffActionBtn.textContent = '反映する';
+      modalActionCallback = () => {
+        closeModal();
+        performApply();
+      };
+      diffModal.style.display = 'flex';
+    } else {
+      performApply();
     }
   });
 });

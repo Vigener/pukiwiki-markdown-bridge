@@ -1,3 +1,0 @@
-import"./modulepreload-polyfill-B5Qt9EMX.js";const d=["https://example.com/pukiwiki/?Your_Team/Your_Name*"];document.addEventListener("DOMContentLoaded",()=>{const l=document.getElementById("allowedUrls"),s=document.getElementById("shortcutApply"),n=document.getElementById("saveBtn"),o=document.getElementById("status");chrome.storage.sync.get({allowedUrls:d,shortcutApply:!0},e=>{l.value=e.allowedUrls.join(`
-`),s.checked=e.shortcutApply}),n.addEventListener("click",()=>{const e=l.value.split(`
-`).map(t=>t.trim()).filter(t=>t.length>0),c=s.checked;chrome.storage.sync.set({allowedUrls:e,shortcutApply:c},()=>{o.style.display="block",setTimeout(()=>{o.style.display="none"},2e3)})})});
