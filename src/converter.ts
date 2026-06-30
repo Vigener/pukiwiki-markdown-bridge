@@ -326,6 +326,12 @@ export function markdownToPukiwiki(mdText: string): string {
     line = line.replace(/\\\*/g, '*');
     line = line.replace(/\\~/g, '~');
     
+    // Obsidian-style WikiLinks in Markdown (one-way Markdown to PukiWiki)
+    line = line.replace(/\[\[(.*?)\]\]/g, (match, text) => {
+      if (text.includes('>') || text.includes(':')) return match;
+      return `[[${text}>./${text}]]`;
+    });
+
     // Links
     // [[Alias>URL]] or [[Alias:URL]] or [[Alias]]
     line = line.replace(/\[(.*?)\]\((.*?)\)(<!--:-->)?/g, (match, text, url, colon) => {
