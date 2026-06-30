@@ -21,6 +21,15 @@ export function pukiwikiToMarkdown(pwText: string): string {
         line = '#'.repeat(level) + ' ' + text;
       }
     } 
+    // Horizontal Rules
+    else if (line.match(/^----/) || line === '#hr') {
+      const match = line.match(/^(----+)/);
+      if (match) {
+        line = match[1];
+      } else if (line === '#hr') {
+        line = '---';
+      }
+    }
     // Unordered Lists
     else if (line.match(/^(-+)\s*(.*)$/)) {
       const match = line.match(/^(-+)\s*(.*)$/);
@@ -57,15 +66,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       const commentText = line.substring(2);
       line = `<!--${commentText}-->`;
     }
-    // Horizontal Rules
-    else if (line.match(/^----/) || line === '#hr') {
-      const match = line.match(/^(----+)/);
-      if (match) {
-        line = match[1];
-      } else if (line === '#hr') {
-        line = '---';
-      }
-    }
+
     // Preformatted
     else if (line.startsWith(' ')) {
       line = '    ' + line.substring(1);
@@ -339,6 +340,11 @@ export function markdownToPukiwiki(mdText: string): string {
       const text = headingMatch[2];
       line = '*'.repeat(level) + ' ' + text;
     }
+    // Horizontal Rules
+    else if (line.match(/^(\s*[-*_]\s*){3,}$/)) {
+      const count = line.replace(/[^-_*]/g, '').length;
+      line = '-'.repeat(Math.max(4, count));
+    }
     // Unordered Lists
     else if (line.match(/^(\s*)-\s+(.*)$/)) {
       isList = true;
@@ -399,11 +405,7 @@ export function markdownToPukiwiki(mdText: string): string {
         line = prefixStr + ' ' + match[2];
       }
     }
-    // Horizontal Rules
-    else if (line.match(/^[-*_]{3,}\s*$/)) {
-      const count = line.replace(/[^-_*]/g, '').length;
-      line = '-'.repeat(Math.max(4, count));
-    }
+
     // Preformatted
     else if (line.startsWith('    ')) {
       line = ' ' + line.substring(4);
