@@ -397,7 +397,7 @@ export function markdownToPukiwiki(mdText: string): string {
           text = text.replace(/ ?<!--nospace-->$/, '');
         }
         
-        const depth = listIndentStack.length;
+        const depth = Math.min(3, listIndentStack.length);
         line = '-'.repeat(depth) + (noSpace ? '' : ' ') + text;
       }
     }
@@ -430,7 +430,7 @@ export function markdownToPukiwiki(mdText: string): string {
           text = text.replace(/ ?<!--nospace-->$/, '');
         }
 
-        const depth = listIndentStack.length;
+        const depth = Math.min(3, listIndentStack.length);
         line = '+'.repeat(depth) + (noSpace ? '' : ' ') + text;
       }
     }

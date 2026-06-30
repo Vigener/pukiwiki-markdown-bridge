@@ -32,7 +32,28 @@ const restoredPw = markdownToPukiwiki(md);
 console.log('\n--- RESTORED PUKIWIKI ---');
 console.log(restoredPw);
 
-const success = pw.trim() === restoredPw.trim();
+const expectedRestoredPw = `
+*** エッジケーステスト
+
+// 1. 深いネストの箇条書き
+- レベル1
+-- レベル2
+--- レベル3
+--- レベル4
+--- レベル5
+
+// 2. 水平線 (箇条書きと混同しないか)
+----
+-----
+------
+
+// 3. WikiLink
+[[リンク]]
+[[エイリアス>リンク]]
+[[エイリアス:リンク]]
+`;
+
+const success = expectedRestoredPw.trim() === restoredPw.trim();
 console.log('\n--- ROUNDTRIP MATCH ---');
 console.log(success ? 'OK: 100% MATCH' : 'FAIL: MISMATCH');
 if (!success) {
