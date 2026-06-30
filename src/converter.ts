@@ -71,11 +71,27 @@ export function pukiwikiToMarkdown(pwText: string): string {
       line = '    ' + line.substring(1);
       olCounters.fill(0); // reset on non-list
     }
-    // Images (Simple #ref)
-    else if (line.match(/^#ref\([^,]+\)$/)) {
-      const match = line.match(/^#ref\(([^,]+)\)$/);
+    // Images (Complex #ref)
+    else if (line.match(/^#ref\((.+?)\)$/)) {
+      const match = line.match(/^#ref\((.+?)\)$/);
       if (match) {
-        line = `![](${match[1]})`;
+        const args = match[1].split(',').map(s => s.trim());
+        const file = args[0];
+        let alt = '';
+        if (args.length > 1) {
+          const lastArg = args[args.length - 1];
+          const isAltText = (arg: string) => {
+            const known = ['left', 'center', 'right', 'wrap', 'nowrap', 'around', 'nolink'];
+            if (known.includes(arg)) return false;
+            if (/^\d+x\d+$/.test(arg)) return false;
+            if (/^\d+%$/.test(arg)) return false;
+            return true;
+          };
+          if (isAltText(lastArg)) {
+            alt = lastArg;
+          }
+        }
+        line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
       }
       olCounters.fill(0);
     }
@@ -113,6 +129,45 @@ export function pukiwikiToMarkdown(pwText: string): string {
     }
     
     // 2. Inline Elements
+    
+    // Line breaks (&br; and ~)
+    line = line.replace(/&br;/g, '<br>');
+    if (line.endsWith('~') && !line.endsWith('\\~')) {
+      line = line.substring(0, line.length - 1) + '  ';
+    }
+
+    // Color
+    line = line.replace(/&color\(([^,)]+)(?:,([^)]+))?\){(.*?)\};?/g, (match, fg, bg, text) => {
+      let style = `color: ${fg};`;
+      if (bg) style += ` background-color: ${bg};`;
+      return `<span style="${style}">${text}</span>`;
+    });
+
+    // Size
+    line = line.replace(/&size\(([^)]+)\){(.*?)\};?/g, (match, size, text) => {
+      return `<span style="font-size: ${size}px;">${text}</span>`;
+    });
+
+    // Images (Complex &ref)
+    line = line.replace(/&ref\((.+?)\);?/g, (match, inner) => {
+      const args = inner.split(',').map(s => s.trim());
+      const file = args[0];
+      let alt = '';
+      if (args.length > 1) {
+        const lastArg = args[args.length - 1];
+        const isAltText = (arg: string) => {
+          const known = ['nolink'];
+          if (known.includes(arg)) return false;
+          if (/^\d+x\d+$/.test(arg)) return false;
+          if (/^\d+%$/.test(arg)) return false;
+          return true;
+        };
+        if (isAltText(lastArg)) {
+          alt = lastArg;
+        }
+      }
+      return `![${alt}](${file})<!--&ref(${inner})-->`;
+    });
     
     // Bold
     line = line.replace(/''(.*?)''/g, '**$1**');
@@ -157,8 +212,83 @@ export function markdownToPukiwiki(mdText: string): string {
     // 1. Inline Elements
     // Process these first so that block prefixes (like `***` for headings) don't get accidentally converted by italic/bold rules.
     
-    // Images
-    line = line.replace(/!\[.*?\]\((.*?)\)/g, '#ref($1)');
+    // Line breaks
+    line = line.replace(/<br>/g, '&br;');
+    if (line.endsWith('  ')) {
+      line = line.substring(0, line.length - 2) + '~';
+    }
+
+    // Images with original PukiWiki options
+    // ![alt](file)<!--#ref(...)-->
+    line = line.replace(/!\[(.*?)\]\((.*?)\)<!--#ref\((.+?)\)-->/g, (match, alt, file, originalArgs) => {
+      const args = originalArgs.split(',').map(s => s.trim());
+      args[0] = file;
+      if (args.length > 1) {
+        const lastArg = args[args.length - 1];
+        const isAltText = (arg: string) => {
+          const known = ['left', 'center', 'right', 'wrap', 'nowrap', 'around', 'nolink'];
+          if (known.includes(arg)) return false;
+          if (/^\d+x\d+$/.test(arg)) return false;
+          if (/^\d+%$/.test(arg)) return false;
+          return true;
+        };
+        if (isAltText(lastArg)) {
+          if (alt) args[args.length - 1] = alt;
+          else args.pop();
+        } else if (alt) {
+          args.push(alt);
+        }
+      } else if (alt) {
+         args.push(alt);
+      }
+      return `#ref(${args.join(',')})`;
+    });
+
+    // Images with original PukiWiki options (&ref)
+    line = line.replace(/!\[(.*?)\]\((.*?)\)<!--&ref\((.+?)\)-->/g, (match, alt, file, originalArgs) => {
+      const args = originalArgs.split(',').map(s => s.trim());
+      args[0] = file;
+      if (args.length > 1) {
+        const lastArg = args[args.length - 1];
+        const isAltText = (arg: string) => {
+          const known = ['nolink'];
+          if (known.includes(arg)) return false;
+          if (/^\d+x\d+$/.test(arg)) return false;
+          if (/^\d+%$/.test(arg)) return false;
+          return true;
+        };
+        if (isAltText(lastArg)) {
+          if (alt) args[args.length - 1] = alt;
+          else args.pop();
+        } else if (alt) {
+          args.push(alt);
+        }
+      } else if (alt) {
+         args.push(alt);
+      }
+      return `&ref(${args.join(',')});`;
+    });
+
+    // Generic Images fallback
+    line = line.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, file) => {
+      if (alt) {
+        return `#ref(${file},${alt})`;
+      }
+      return `#ref(${file})`;
+    });
+
+    // Color
+    line = line.replace(/<span style="color:\s*([^;]+);(?:\s*background-color:\s*([^;]+);)?\s*">(.*?)<\/span>/g, (match, fg, bg, text) => {
+      if (bg) {
+        return `&color(${fg},${bg}){${text}};`;
+      }
+      return `&color(${fg}){${text}};`;
+    });
+    
+    // Size
+    line = line.replace(/<span style="font-size:\s*([^p]+)px;\s*">(.*?)<\/span>/g, (match, size, text) => {
+      return `&size(${size}){${text}};`;
+    });
 
     // Bold
     // Use .+? to avoid matching empty strings which caused the `''''''` issue
