@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         showEditButton();
       }
     } catch (e) {
-      console.error('Error communicating with content script:', e);
+      console.warn('Error communicating with content script:', e);
       showEditButton();
     }
   }
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       window.close(); // Close popup after applying
     } catch (e) {
-      console.error('Error applying text:', e);
+      console.warn('Error applying text:', e);
       alert('適用に失敗しました。');
     }
   };
