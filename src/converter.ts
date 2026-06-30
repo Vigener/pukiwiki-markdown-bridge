@@ -63,8 +63,13 @@ export function pukiwikiToMarkdown(pwText: string): string {
       line = `<!--${commentText}-->`;
     }
     // Horizontal Rules
-    else if (line.startsWith('----') || line === '#hr') {
-      line = '---';
+    else if (line.match(/^----/) || line === '#hr') {
+      const match = line.match(/^(----+)/);
+      if (match) {
+        line = match[1];
+      } else if (line === '#hr') {
+        line = '---';
+      }
     }
     // Preformatted
     else if (line.startsWith(' ')) {
@@ -187,10 +192,10 @@ export function pukiwikiToMarkdown(pwText: string): string {
       }
     });
     
-    // Bold
-    line = line.replace(/''(.*?)''/g, '**$1**');
     // Italic
     line = line.replace(/'''(.*?)'''/g, '*$1*');
+    // Bold
+    line = line.replace(/''(.*?)''/g, '**$1**');
     // Strikethrough
     line = line.replace(/%%(.*?)%%/g, '~~$1~~');
     
@@ -223,7 +228,7 @@ export function markdownToPukiwiki(mdText: string): string {
     let line = lines[i];
 
     // Table Separator (skip)
-    if (line.match(/^\|(?:---+\|)+$/)) {
+    if (line.match(/^\|(?:\s*[:-]+\s*\|)+$/)) {
       continue; // Skip the markdown separator row
     }
 
@@ -370,8 +375,9 @@ export function markdownToPukiwiki(mdText: string): string {
       }
     }
     // Horizontal Rules
-    else if (line.match(/^---+$/)) {
-      line = '----';
+    else if (line.match(/^[-*_]{3,}\s*$/)) {
+      const count = line.replace(/[^-_*]/g, '').length;
+      line = '-'.repeat(Math.max(4, count));
     }
     // Preformatted
     else if (line.startsWith('    ')) {
