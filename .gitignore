@@ -1,0 +1,9 @@
+node_modules/
+dist/
+out_test/
+convert_test/
+pw1.txt
+pw2.txt
+FormattingRules.txt
+docs/for_lab_members/
+.DS_Store
