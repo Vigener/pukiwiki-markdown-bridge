@@ -5,6 +5,7 @@ import * as Diff from 'diff';
 document.addEventListener('DOMContentLoaded', async () => {
   const applyBtn = document.getElementById('apply-btn') as HTMLButtonElement;
   const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
+  const editPageBtn = document.getElementById('edit-page-btn') as HTMLButtonElement;
   const textarea = document.getElementById('markdown-editor') as HTMLTextAreaElement;
   
   const draftBanner = document.getElementById('draft-banner') as HTMLDivElement;
@@ -127,6 +128,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab && tab.id) {
     currentTabUrl = tab.url || '';
+    const showEditButton = () => {
+      applyBtn.style.display = 'none';
+      copyBtn.style.display = 'none';
+      if (editPageBtn) {
+        editPageBtn.style.display = 'block';
+        editPageBtn.onclick = () => {
+          let editUrl = currentTabUrl;
+          try {
+            const urlObj = new URL(currentTabUrl);
+            if (urlObj.search) {
+              if (!urlObj.search.includes('cmd=')) {
+                const pageName = urlObj.search.substring(1);
+                editUrl = `${urlObj.origin}${urlObj.pathname}?cmd=edit&page=${pageName}`;
+              }
+            } else {
+              editUrl = `${urlObj.origin}${urlObj.pathname}?cmd=edit`;
+            }
+          } catch(e) {}
+          
+          if (tab && tab.id) {
+            chrome.tabs.update(tab.id, { url: editUrl });
+            window.close();
+          }
+        };
+      }
+      easyMDE.value('テキストエリアが見つかりませんでした。\n上部の「編集画面へ移動」ボタンを押して、編集ページへ移動してください。');
+    };
+
     try {
       // Get PukiWiki text from content script
       const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_TEXT' });
@@ -178,11 +207,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
       } else {
-        easyMDE.value('テキストエリアが見つかりませんでした。\n[編集]ボタンを押して、編集ページへ移動してください。');
+        showEditButton();
       }
     } catch (e) {
       console.error('Error communicating with content script:', e);
-      easyMDE.value('テキストエリアが見つかりませんでした。\n[編集]ボタンを押して、編集ページへ移動してください。');
+      showEditButton();
     }
   }
 
