@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     spellChecker: false,
     autofocus: true,
     status: false,
-    toolbar: ['bold', 'italic', 'strikethrough', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'table', 'horizontal-rule', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide']
+    toolbar: ['bold', 'italic', 'strikethrough', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'table', 'horizontal-rule', '|', 'guide']
   });
 
   // Apply custom keymaps directly to CodeMirror

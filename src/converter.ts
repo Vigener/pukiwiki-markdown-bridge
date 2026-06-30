@@ -78,6 +78,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
         const args = match[1].split(',').map(s => s.trim());
         const file = args[0];
         let alt = '';
+        let hasOptions = false;
         if (args.length > 1) {
           const lastArg = args[args.length - 1];
           const isAltText = (arg: string) => {
@@ -89,9 +90,17 @@ export function pukiwikiToMarkdown(pwText: string): string {
           };
           if (isAltText(lastArg)) {
             alt = lastArg;
+            if (args.length > 2) hasOptions = true;
+          } else {
+            hasOptions = true;
           }
         }
-        line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
+        
+        if (hasOptions) {
+          line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
+        } else {
+          line = `![${alt}](${file})`;
+        }
       }
       olCounters.fill(0);
     }
@@ -153,6 +162,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       const args = inner.split(',').map(s => s.trim());
       const file = args[0];
       let alt = '';
+      let hasOptions = false;
       if (args.length > 1) {
         const lastArg = args[args.length - 1];
         const isAltText = (arg: string) => {
@@ -164,9 +174,17 @@ export function pukiwikiToMarkdown(pwText: string): string {
         };
         if (isAltText(lastArg)) {
           alt = lastArg;
+          if (args.length > 2) hasOptions = true;
+        } else {
+          hasOptions = true;
         }
       }
-      return `![${alt}](${file})<!--&ref(${inner})-->`;
+      
+      if (hasOptions) {
+        return `![${alt}](${file})<!--&ref(${inner})-->`;
+      } else {
+        return `![${alt}](${file})`;
+      }
     });
     
     // Bold
