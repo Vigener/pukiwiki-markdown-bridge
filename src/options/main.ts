@@ -23,9 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
     markdownRoundtripCheckEl.checked = items.markdownRoundtripCheck;
   });
 
-  // Save rules
-  saveBtn.addEventListener('click', () => {
+  // Save rules function
+  const saveOptions = () => {
     const lines = allowedUrlsEl.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    
+    // Check for missing wildcards
+    const missingWildcard = lines.some(line => !line.includes('*'));
+    if (missingWildcard) {
+      const proceed = confirm('URLの中にワイルドカード（*）が含まれていないものがあります。\n\n特定の1ページのみで動作させたい場合を除き、配下の全ページで動作させるために末尾に * を付けることを強く推奨します。\n\nこのまま保存しますか？');
+      if (!proceed) {
+        return; // Cancel saving
+      }
+    }
+
     const shortcutApply = shortcutApplyEl.checked;
     const diffConfirmMode = diffConfirmModeEl.value;
     const markdownRoundtripCheck = markdownRoundtripCheckEl.checked;
@@ -41,5 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.style.display = 'none';
       }, 2000);
     });
+  };
+
+  // Save rules button click
+  saveBtn.addEventListener('click', saveOptions);
+
+  // Cmd+Enter or Ctrl+Enter to save
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.code === 'Enter') {
+      e.preventDefault();
+      saveOptions();
+    }
   });
 });
