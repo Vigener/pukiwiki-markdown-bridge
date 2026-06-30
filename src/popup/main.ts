@@ -38,12 +38,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cmdKey = isMac ? '⌘+Enter' : 'Ctrl+Enter';
   const escKey = 'Esc';
 
+  const optEnterKey = isMac ? '⌥+Enter' : 'Alt+Enter';
+  const optShiftDKey = isMac ? '⌥+Shift+D' : 'Alt+Shift+D';
+  const optBackspaceKey = isMac ? '⌥+Backspace' : 'Alt+Backspace';
+
   if (shortcutApply) {
     applyBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
   }
   validationCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
   validationActionBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
   diffCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
+
+  restoreBtn.innerHTML += `<span class="shortcut-key">${optEnterKey}</span>`;
+  draftDiffBtn.innerHTML += `<span class="shortcut-key">${optShiftDKey}</span>`;
+  discardBtn.innerHTML += `<span class="shortcut-key">${optBackspaceKey}</span>`;
 
   let modalActionCallback: (() => void) | null = null;
   const closeModal = () => {
@@ -229,6 +237,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Global shortcut for Cmd+Enter to confirm modal or apply
   // Also support Esc to cancel modals
   document.addEventListener('keydown', (e) => {
+    // Draft Banner Shortcuts
+    if (draftBanner.style.display === 'flex' && validationModal.style.display !== 'flex' && diffModal.style.display !== 'flex') {
+      if (e.altKey && !e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        restoreBtn.click();
+        return;
+      }
+      if (e.altKey && e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        e.stopPropagation();
+        draftDiffBtn.click();
+        return;
+      }
+      if (e.altKey && !e.shiftKey && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault();
+        e.stopPropagation();
+        discardBtn.click();
+        return;
+      }
+    }
+
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
