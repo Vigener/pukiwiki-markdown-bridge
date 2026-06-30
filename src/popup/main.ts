@@ -34,6 +34,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   const { allowedUrls, shortcutApply, diffConfirmMode } = items;
 
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const cmdKey = isMac ? '⌘+Enter' : 'Ctrl+Enter';
+  const escKey = 'Esc';
+
+  if (shortcutApply) {
+    applyBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
+  }
+  validationCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
+  validationActionBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
+  diffCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
+
   let modalActionCallback: (() => void) | null = null;
   const closeModal = () => {
     diffModal.style.display = 'none';
@@ -185,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 span.textContent = part.value;
                 diffContent.appendChild(span);
               });
-              diffActionBtn.textContent = '復元する';
+              diffActionBtn.innerHTML = `復元する<span class="shortcut-key">${cmdKey}</span>`;
               modalActionCallback = () => {
                 easyMDE.value(draftText);
                 draftBanner.style.display = 'none';
@@ -292,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           span.textContent = part.value;
           diffContent.appendChild(span);
         });
-        diffActionBtn.textContent = '反映する';
+        diffActionBtn.innerHTML = `反映する<span class="shortcut-key">${cmdKey}</span>`;
         modalActionCallback = () => {
           closeModal();
           performApply();
