@@ -21,33 +21,33 @@ export function pukiwikiToMarkdown(pwText: string): string {
       }
     } 
     // Unordered Lists
-    else if (line.match(/^---?/)) {
-      if (line.startsWith('---')) {
-        line = line.replace(/^---/, '    - ');
-      } else if (line.startsWith('--')) {
-        line = line.replace(/^--/, '  - ');
-      } else if (line.startsWith('-')) {
-        line = line.replace(/^-/, '- ');
+    else if (line.match(/^-{1,3}/)) {
+      const match = line.match(/^(-{1,3})\s*(.*)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2];
+        const indent = level === 1 ? '' : level === 2 ? '  ' : '    ';
+        line = indent + '- ' + text;
       }
     }
     // Ordered Lists
-    else if (line.match(/^\+\+\+?/)) {
-      if (line.startsWith('+++')) {
-        line = line.replace(/^\+\+\+/, '    1. ');
-      } else if (line.startsWith('++')) {
-        line = line.replace(/^\+\+/, '  1. ');
-      } else if (line.startsWith('+')) {
-        line = line.replace(/^\+/, '1. ');
+    else if (line.match(/^\+{1,3}/)) {
+      const match = line.match(/^(\+{1,3})\s*(.*)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2];
+        const indent = level === 1 ? '' : level === 2 ? '  ' : '    ';
+        line = indent + '1. ' + text;
       }
     }
     // Quotes
-    else if (line.match(/^>>>?/)) {
-      if (line.startsWith('>>>')) {
-        line = line.replace(/^>>>/, '> > > ');
-      } else if (line.startsWith('>>')) {
-        line = line.replace(/^>>/, '> > ');
-      } else if (line.startsWith('>')) {
-        line = line.replace(/^>/, '> ');
+    else if (line.match(/^>{1,3}/)) {
+      const match = line.match(/^(>{1,3})\s*(.*)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2];
+        const prefix = '> '.repeat(level);
+        line = prefix + text;
       }
     }
     // Horizontal Rules
@@ -158,7 +158,7 @@ export function markdownToPukiwiki(mdText: string): string {
     if (headingMatch) {
       const level = headingMatch[1].length;
       const text = headingMatch[2];
-      line = '*'.repeat(level) + text;
+      line = '*'.repeat(level) + ' ' + text;
     }
     // Unordered Lists
     else if (line.match(/^(    |  )?-\s+(.*)$/)) {
@@ -168,7 +168,7 @@ export function markdownToPukiwiki(mdText: string): string {
         let prefix = '-';
         if (indent === '  ') prefix = '--';
         else if (indent === '    ') prefix = '---';
-        line = prefix + match[2];
+        line = prefix + ' ' + match[2];
       }
     }
     // Ordered Lists
@@ -179,7 +179,7 @@ export function markdownToPukiwiki(mdText: string): string {
         let prefix = '+';
         if (indent === '  ') prefix = '++';
         else if (indent === '    ') prefix = '+++';
-        line = prefix + match[2];
+        line = prefix + ' ' + match[2];
       }
     }
     // Quotes
@@ -187,7 +187,7 @@ export function markdownToPukiwiki(mdText: string): string {
       const match = line.match(/^(> > >|> >|>)\s*(.*)$/);
       if (match) {
         const prefixStr = match[1].replace(/ /g, ''); // Convert "> >" to ">>"
-        line = prefixStr + match[2];
+        line = prefixStr + ' ' + match[2];
       }
     }
     // Horizontal Rules
@@ -204,3 +204,4 @@ export function markdownToPukiwiki(mdText: string): string {
 
   return pwLines.join('\n');
 }
+
