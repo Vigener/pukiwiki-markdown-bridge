@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         showEditButton();
       }
     } catch (e) {
-      console.warn('Error communicating with content script:', e);
+      console.log('pukiwiki-markdown-bridge: Content script not found or error (expected if not edit page):', e);
       showEditButton();
     }
   }
@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       window.close(); // Close popup after applying
     } catch (e) {
-      console.warn('Error applying text:', e);
+      console.error('Error applying text:', e);
       alert('適用に失敗しました。');
     }
   };
