@@ -46,12 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Define custom shortcuts
-  const customShortcuts = {};
-  if (shortcutApply) {
-    customShortcuts["Cmd-Enter"] = () => applyBtn.click();
-    customShortcuts["Ctrl-Enter"] = () => applyBtn.click();
-  }
+  // Define custom comment toggle
 
   // Custom comment toggle
   const toggleComment = (cm: any) => {
@@ -83,8 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
   
-  customShortcuts["Cmd-/"] = toggleComment;
-  customShortcuts["Ctrl-/"] = toggleComment;
+
 
   // Initialize EasyMDE
   const easyMDE = new EasyMDE({
@@ -100,11 +94,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     "Cmd-/": toggleComment,
     "Ctrl-/": toggleComment
   };
-  
-  if (shortcutApply) {
-    extraKeys["Cmd-Enter"] = () => applyBtn.click();
-    extraKeys["Ctrl-Enter"] = () => applyBtn.click();
-  }
 
   const existingKeys = easyMDE.codemirror.getOption("extraKeys") || {};
   easyMDE.codemirror.setOption("extraKeys", { ...existingKeys, ...extraKeys });
@@ -215,15 +204,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Global shortcut for Cmd+Enter to confirm modal
+  // Global shortcut for Cmd+Enter to confirm modal or apply
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
       if (diffModal.style.display === 'flex') {
         diffActionBtn.click();
-        e.preventDefault();
+      } else if (shortcutApply) {
+        applyBtn.click();
       }
     }
-  });
+  }, true); // Use capture phase to prevent double firing
 
   // Auto-save Draft
   let draftTimeout: any;
