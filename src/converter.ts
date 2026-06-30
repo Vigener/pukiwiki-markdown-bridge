@@ -296,10 +296,11 @@ export function markdownToPukiwiki(mdText: string): string {
 
     // Generic Images fallback
     line = line.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, file) => {
-      if (alt) {
-        return `#ref(${file},${alt})`;
-      }
-      return `#ref(${file})`;
+      // PukiWiki treats the second argument of ref() as a pagename historically.
+      // Passing alt text like ref(file.jpg, alt) causes an "obsolete" error.
+      // To prevent this, we simply drop the alt text in the generic fallback.
+      // We also use &ref() instead of #ref() because Markdown images can be inline.
+      return `&ref(${file});`;
     });
 
     // Color
