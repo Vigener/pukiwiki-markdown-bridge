@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "pukiwiki-markdown-bridge",
+  "version": "1.0.0",
+  "description": "A Chrome Extension to edit PukiWiki using Markdown",
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "Open Markdown Editor"
+  },
+  "options_page": "src/options/index.html",
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content_script.ts"]
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}
