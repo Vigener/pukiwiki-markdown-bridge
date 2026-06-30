@@ -22,29 +22,24 @@ export function pukiwikiToMarkdown(pwText: string): string {
       }
     } 
     // Unordered Lists
-    else if (line.match(/^-{1,3}/)) {
-      const match = line.match(/^(-{1,3})\s*(.*)$/);
+    else if (line.match(/^(-+)\s*(.*)$/)) {
+      const match = line.match(/^(-+)\s*(.*)$/);
       if (match) {
-        const level = match[1].length;
-        const text = match[2];
-        const indent = level === 1 ? '' : level === 2 ? '  ' : '    ';
-        line = indent + '- ' + text;
+        const depth = match[1].length;
+        const indent = '    '.repeat(depth - 1);
+        line = indent + '- ' + match[2];
+        olCounters.fill(0);
       }
     }
     // Ordered Lists
-    else if (line.match(/^\+{1,3}/)) {
-      const match = line.match(/^(\+{1,3})\s*(.*)$/);
+    else if (line.match(/^(\++)\s*(.*)$/)) {
+      const match = line.match(/^(\++)\s*(.*)$/);
       if (match) {
-        const level = match[1].length;
-        const text = match[2];
-        const indent = level === 1 ? '' : level === 2 ? '  ' : '    ';
-        
-        olCounters[level]++;
-        for (let k = level + 1; k < olCounters.length; k++) {
-          olCounters[k] = 0;
-        }
-        
-        line = indent + olCounters[level] + '. ' + text;
+        const depth = match[1].length;
+        const indent = '    '.repeat(depth - 1);
+        olCounters[depth - 1]++;
+        olCounters.fill(0, depth);
+        line = indent + `${olCounters[depth - 1]}. ` + match[2];
       }
     }
     // Quotes
@@ -349,7 +344,7 @@ export function markdownToPukiwiki(mdText: string): string {
         for (const c of indentStr) {
           spaces += c === '\t' ? 4 : 1;
         }
-        const depth = spaces >= 8 ? 3 : spaces >= 4 ? 2 : 1;
+        const depth = spaces >= 6 ? 3 : spaces >= 2 ? 2 : 1;
         line = '-'.repeat(depth) + ' ' + match[2];
       }
     }
@@ -362,7 +357,7 @@ export function markdownToPukiwiki(mdText: string): string {
         for (const c of indentStr) {
           spaces += c === '\t' ? 4 : 1;
         }
-        const depth = spaces >= 8 ? 3 : spaces >= 4 ? 2 : 1;
+        const depth = spaces >= 6 ? 3 : spaces >= 2 ? 2 : 1;
         line = '+'.repeat(depth) + ' ' + match[2];
       }
     }
