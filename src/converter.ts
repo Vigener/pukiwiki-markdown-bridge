@@ -171,6 +171,8 @@ export function markdownToPukiwiki(mdText: string): string {
     line = line.replace(/~~(.+?)~~/g, '%%$1%%');
     
     // Links
+    // [[WikiLink]] (Obsidian style)
+    line = line.replace(/\[\[(.*?)\]\]/g, '[[$1>./$1]]');
     // [Link Name](URL)
     line = line.replace(/\[(.*?)\]\((.*?)\)/g, '[[$1>$2]]');
     // <URL>

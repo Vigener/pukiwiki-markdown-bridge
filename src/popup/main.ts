@@ -178,13 +178,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
       } else {
-        easyMDE.value('テキストエリアが見つかりませんでした。');
+        easyMDE.value('テキストエリアが見つかりませんでした。\n[編集]ボタンを押して、編集ページへ移動してください。');
       }
     } catch (e) {
       console.error('Error communicating with content script:', e);
-      easyMDE.value('通信エラー。ページをリロードして再試行してください。');
+      easyMDE.value('テキストエリアが見つかりませんでした。\n[編集]ボタンを押して、編集ページへ移動してください。');
     }
   }
+
+  // Global shortcut for Cmd+Enter to confirm modal
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      if (diffModal.style.display === 'flex') {
+        diffActionBtn.click();
+        e.preventDefault();
+      }
+    }
+  });
 
   // Auto-save Draft
   let draftTimeout: any;
