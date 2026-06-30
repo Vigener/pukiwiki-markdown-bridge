@@ -57,6 +57,11 @@ export function pukiwikiToMarkdown(pwText: string): string {
         line = prefix + text;
       }
     }
+    // Comments
+    else if (line.startsWith('//')) {
+      const commentText = line.substring(2);
+      line = `<!--${commentText}-->`;
+    }
     // Horizontal Rules
     else if (line.startsWith('----') || line === '#hr') {
       line = '---';
@@ -75,22 +80,32 @@ export function pukiwikiToMarkdown(pwText: string): string {
       olCounters.fill(0);
     }
     // Tables
-    else if (line.startsWith('|') && line.endsWith('|h')) {
-      line = line.substring(0, line.length - 1); // Remove 'h'
-      mdLines.push(line);
+    else if (line.startsWith('|') && (line.endsWith('|') || line.match(/\|[hfc]+$/))) {
+      let option = '';
+      const optMatch = line.match(/\|([hfc]+)$/);
+      if (optMatch) {
+        option = optMatch[1];
+        line = line.substring(0, line.length - option.length);
+      }
       
-      // Calculate number of columns to generate the separator
-      const cols = line.split('|').length - 2; // -2 for start/end pipes
-      if (cols > 0) {
-        let separator = '|';
-        for (let j = 0; j < cols; j++) {
-          separator += '---|';
+      mdLines.push(line + (option ? ` <!--${option}-->` : ''));
+      
+      if (!inTable) {
+        inTable = true;
+        const cols = line.split('|').length - 2;
+        if (cols > 0) {
+          let separator = '|';
+          for (let j = 0; j < cols; j++) {
+            separator += '---|';
+          }
+          mdLines.push(separator);
         }
-        line = separator;
       }
       olCounters.fill(0);
+      continue;
     }
     else {
+      inTable = false;
       // Regular text or empty line, reset ordered list counters
       if (!line.match(/^-{1,3}/)) {
         olCounters.fill(0);
@@ -134,14 +149,8 @@ export function markdownToPukiwiki(mdText: string): string {
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
 
-    // Table Separator (skip and modify previous line if needed)
+    // Table Separator (skip)
     if (line.match(/^\|(?:---+\|)+$/)) {
-      if (pwLines.length > 0) {
-        const prev = pwLines[pwLines.length - 1];
-        if (prev.startsWith('|') && prev.endsWith('|')) {
-          pwLines[pwLines.length - 1] = prev + 'h';
-        }
-      }
       continue; // Skip the markdown separator row
     }
 
@@ -217,6 +226,20 @@ export function markdownToPukiwiki(mdText: string): string {
     // Preformatted
     else if (line.startsWith('    ')) {
       line = ' ' + line.substring(4);
+    }
+    // Comments
+    else if (line.match(/^<!--(.*)-->$/)) {
+      const match = line.match(/^<!--(.*)-->$/);
+      if (match) {
+        line = '//' + match[1];
+      }
+    }
+    // Table Options
+    else if (line.startsWith('|') && line.match(/\| <!--([hfc]+)-->$/)) {
+      const optMatch = line.match(/\| <!--([hfc]+)-->$/);
+      if (optMatch) {
+        line = line.substring(0, line.length - optMatch[0].length) + '|' + optMatch[1];
+      }
     }
 
     pwLines.push(line);
