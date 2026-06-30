@@ -26,7 +26,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       const match = line.match(/^(-+)\s*(.*)$/);
       if (match) {
         const depth = match[1].length;
-        const indent = '    '.repeat(depth - 1);
+        const indent = '  '.repeat(depth - 1);
         line = indent + '- ' + match[2];
         olCounters.fill(0);
       }
@@ -36,7 +36,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       const match = line.match(/^(\++)\s*(.*)$/);
       if (match) {
         const depth = match[1].length;
-        const indent = '    '.repeat(depth - 1);
+        const indent = '  '.repeat(depth - 1);
         olCounters[depth - 1]++;
         olCounters.fill(0, depth);
         line = indent + `${olCounters[depth - 1]}. ` + match[2];
@@ -219,8 +219,12 @@ export function markdownToPukiwiki(mdText: string): string {
   const lines = mdText.split('\n');
   const pwLines: string[] = [];
 
+  let listIndentStack: number[] = [0];
+  let lastWasList = false;
+
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
+    let isList = false;
 
     // Table Separator (skip)
     if (line.match(/^\|(?:\s*[:-]+\s*\|)+$/)) {
@@ -337,6 +341,9 @@ export function markdownToPukiwiki(mdText: string): string {
     }
     // Unordered Lists
     else if (line.match(/^(\s*)-\s+(.*)$/)) {
+      isList = true;
+      if (!lastWasList) listIndentStack = [0];
+      
       const match = line.match(/^(\s*)-\s+(.*)$/);
       if (match) {
         const indentStr = match[1] || '';
@@ -344,12 +351,25 @@ export function markdownToPukiwiki(mdText: string): string {
         for (const c of indentStr) {
           spaces += c === '\t' ? 4 : 1;
         }
-        const depth = spaces >= 6 ? 3 : spaces >= 2 ? 2 : 1;
+        
+        while (listIndentStack.length > 1 && spaces <= listIndentStack[listIndentStack.length - 2]) {
+          listIndentStack.pop();
+        }
+        if (spaces > listIndentStack[listIndentStack.length - 1]) {
+          listIndentStack.push(spaces);
+        } else if (spaces < listIndentStack[listIndentStack.length - 1]) {
+          listIndentStack[listIndentStack.length - 1] = spaces;
+        }
+
+        const depth = Math.min(3, listIndentStack.length);
         line = '-'.repeat(depth) + ' ' + match[2];
       }
     }
     // Ordered Lists
     else if (line.match(/^(\s*)\d+\.\s+(.*)$/)) {
+      isList = true;
+      if (!lastWasList) listIndentStack = [0];
+
       const match = line.match(/^(\s*)\d+\.\s+(.*)$/);
       if (match) {
         const indentStr = match[1] || '';
@@ -357,7 +377,17 @@ export function markdownToPukiwiki(mdText: string): string {
         for (const c of indentStr) {
           spaces += c === '\t' ? 4 : 1;
         }
-        const depth = spaces >= 6 ? 3 : spaces >= 2 ? 2 : 1;
+
+        while (listIndentStack.length > 1 && spaces <= listIndentStack[listIndentStack.length - 2]) {
+          listIndentStack.pop();
+        }
+        if (spaces > listIndentStack[listIndentStack.length - 1]) {
+          listIndentStack.push(spaces);
+        } else if (spaces < listIndentStack[listIndentStack.length - 1]) {
+          listIndentStack[listIndentStack.length - 1] = spaces;
+        }
+
+        const depth = Math.min(3, listIndentStack.length);
         line = '+'.repeat(depth) + ' ' + match[2];
       }
     }
@@ -391,6 +421,12 @@ export function markdownToPukiwiki(mdText: string): string {
       if (optMatch) {
         line = line.substring(0, line.length - optMatch[0].length) + '|' + optMatch[1];
       }
+    }
+
+    if (isList) {
+      lastWasList = true;
+    } else if (line.trim() !== '' && !line.startsWith('//')) {
+      lastWasList = false;
     }
 
     pwLines.push(line);
