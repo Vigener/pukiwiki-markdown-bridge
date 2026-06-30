@@ -48,6 +48,23 @@
     </div>
   </div>
 
+  <!-- Validation Modal -->
+  <div id="validation-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content validation-content">
+      <div class="modal-header validation-header">
+        <h2 id="validation-modal-title">⚠️ PukiWikiで非互換の記法があります</h2>
+      </div>
+      <div class="modal-body">
+        <p>以下の内容はPukiWikiの制限により正しく反映されないか、自動的に変換されます。</p>
+        <ul id="validation-content" class="validation-list"></ul>
+      </div>
+      <div class="modal-footer">
+        <button id="validation-cancel-btn" class="modal-btn cancel">編集に戻る</button>
+        <button id="validation-action-btn" class="modal-btn action warning">自動変換して反映</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="./main.ts"></script>
 </body>
 </html>

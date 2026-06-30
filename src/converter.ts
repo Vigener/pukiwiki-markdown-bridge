@@ -435,3 +435,58 @@ export function markdownToPukiwiki(mdText: string): string {
   return pwLines.join('\n');
 }
 
+
+/**
+ * Validate Markdown for features unsupported by PukiWiki
+ */
+export function validateMarkdown(mdText: string): string[] {
+  const errors: string[] = [];
+  const lines = mdText.split('\n');
+  
+  let listIndentStack: number[] = [0];
+  let lastWasList = false;
+  let hasDepth4 = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    let isList = false;
+
+    // Unordered Lists
+    if (line.match(/^(\s*)-\s+(.*)$/)) {
+      isList = true;
+      if (!lastWasList) listIndentStack = [0];
+      const match = line.match(/^(\s*)-\s+(.*)$/);
+      if (match) {
+        let spaces = 0;
+        for (const c of (match[1] || '')) spaces += c === '\t' ? 4 : 1;
+        while (listIndentStack.length > 1 && spaces <= listIndentStack[listIndentStack.length - 2]) listIndentStack.pop();
+        if (spaces > listIndentStack[listIndentStack.length - 1]) listIndentStack.push(spaces);
+        else if (spaces < listIndentStack[listIndentStack.length - 1]) listIndentStack[listIndentStack.length - 1] = spaces;
+        if (listIndentStack.length > 3) hasDepth4 = true;
+      }
+    }
+    // Ordered Lists
+    else if (line.match(/^(\s*)\d+\.\s+(.*)$/)) {
+      isList = true;
+      if (!lastWasList) listIndentStack = [0];
+      const match = line.match(/^(\s*)\d+\.\s+(.*)$/);
+      if (match) {
+        let spaces = 0;
+        for (const c of (match[1] || '')) spaces += c === '\t' ? 4 : 1;
+        while (listIndentStack.length > 1 && spaces <= listIndentStack[listIndentStack.length - 2]) listIndentStack.pop();
+        if (spaces > listIndentStack[listIndentStack.length - 1]) listIndentStack.push(spaces);
+        else if (spaces < listIndentStack[listIndentStack.length - 1]) listIndentStack[listIndentStack.length - 1] = spaces;
+        if (listIndentStack.length > 3) hasDepth4 = true;
+      }
+    }
+
+    if (isList) lastWasList = true;
+    else if (line.trim() !== '' && !line.startsWith('//')) lastWasList = false;
+  }
+
+  if (hasDepth4) {
+    errors.push('箇条書きのネスト（深さ4以上）: PukiWikiは深さ3までしか対応していません。そのまま反映すると深さ3に丸められます。');
+  }
+
+  return errors;
+}

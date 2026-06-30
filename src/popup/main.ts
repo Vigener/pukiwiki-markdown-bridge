@@ -1,5 +1,5 @@
 import EasyMDE from 'easymde';
-import { pukiwikiToMarkdown, markdownToPukiwiki } from '../converter';
+import { pukiwikiToMarkdown, markdownToPukiwiki, validateMarkdown } from '../converter';
 import * as Diff from 'diff';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const diffCancelBtn = document.getElementById('diff-cancel-btn') as HTMLButtonElement;
   const diffActionBtn = document.getElementById('diff-action-btn') as HTMLButtonElement;
 
+  const validationModal = document.getElementById('validation-modal') as HTMLDivElement;
+  const validationContent = document.getElementById('validation-content') as HTMLUListElement;
+  const validationCancelBtn = document.getElementById('validation-cancel-btn') as HTMLButtonElement;
+  const validationActionBtn = document.getElementById('validation-action-btn') as HTMLButtonElement;
+
   if (!applyBtn || !textarea) return;
 
   const DEFAULT_URLS = ['https://example.com/pukiwiki/?Your_Team/Your_Name*'];
@@ -32,11 +37,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   let modalActionCallback: (() => void) | null = null;
   const closeModal = () => {
     diffModal.style.display = 'none';
+    validationModal.style.display = 'none';
     modalActionCallback = null;
   };
   
   diffCancelBtn.addEventListener('click', closeModal);
   diffActionBtn.addEventListener('click', () => {
+    if (modalActionCallback) modalActionCallback();
+  });
+
+  validationCancelBtn.addEventListener('click', closeModal);
+  validationActionBtn.addEventListener('click', () => {
     if (modalActionCallback) modalActionCallback();
   });
 
@@ -205,14 +216,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Global shortcut for Cmd+Enter to confirm modal or apply
+  // Also support Esc to cancel modals
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
-      if (diffModal.style.display === 'flex') {
+      if (validationModal.style.display === 'flex') {
+        validationActionBtn.click();
+      } else if (diffModal.style.display === 'flex') {
         diffActionBtn.click();
       } else if (shortcutApply) {
         applyBtn.click();
+      }
+    } else if (e.key === 'Escape') {
+      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
       }
     }
   }, true); // Use capture phase to prevent double firing
@@ -250,33 +270,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyBtn.addEventListener('click', async () => {
     const currentMdText = easyMDE.value();
     
-    if (diffConfirmMode === 'none') {
-      performApply();
-      return;
-    }
+    const validationErrors = validateMarkdown(currentMdText);
     
-    const diff = Diff.diffLines(initialMdText, currentMdText);
-    const hasDeletions = diff.some(part => part.removed);
-    
-    if (diffConfirmMode === 'always' || (diffConfirmMode === 'deletions_only' && hasDeletions)) {
-      diffModalTitle.textContent = '反映する差分の確認';
-      diffContent.innerHTML = '';
-      diff.forEach((part) => {
-        const span = document.createElement('span');
-        span.className = part.added ? 'diff-line diff-added' :
-                         part.removed ? 'diff-line diff-removed' :
-                         'diff-line diff-unchanged';
-        span.textContent = part.value;
-        diffContent.appendChild(span);
+    const runDiffOrApply = () => {
+      if (diffConfirmMode === 'none') {
+        performApply();
+        return;
+      }
+      
+      const diff = Diff.diffLines(initialMdText, currentMdText);
+      const hasDeletions = diff.some(part => part.removed);
+      
+      if (diffConfirmMode === 'always' || (diffConfirmMode === 'deletions_only' && hasDeletions)) {
+        diffModalTitle.textContent = '反映する差分の確認';
+        diffContent.innerHTML = '';
+        diff.forEach((part) => {
+          const span = document.createElement('span');
+          span.className = part.added ? 'diff-line diff-added' :
+                           part.removed ? 'diff-line diff-removed' :
+                           'diff-line diff-unchanged';
+          span.textContent = part.value;
+          diffContent.appendChild(span);
+        });
+        diffActionBtn.textContent = '反映する';
+        modalActionCallback = () => {
+          closeModal();
+          performApply();
+        };
+        diffModal.style.display = 'flex';
+      } else {
+        performApply();
+      }
+    };
+
+    if (validationErrors.length > 0) {
+      validationContent.innerHTML = '';
+      validationErrors.forEach(error => {
+        const li = document.createElement('li');
+        li.textContent = error;
+        validationContent.appendChild(li);
       });
-      diffActionBtn.textContent = '反映する';
       modalActionCallback = () => {
         closeModal();
-        performApply();
+        runDiffOrApply();
       };
-      diffModal.style.display = 'flex';
+      validationModal.style.display = 'flex';
     } else {
-      performApply();
+      runDiffOrApply();
     }
   });
 });

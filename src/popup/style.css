@@ -226,6 +226,29 @@ body {
   background-color: #2980b9;
 }
 
+.modal-btn.action.warning {
+  background-color: #e67e22;
+}
+
+.modal-btn.action.warning:hover {
+  background-color: #d35400;
+}
+
+.validation-header h2 {
+  color: #e67e22;
+}
+
+.validation-list {
+  margin-top: 12px;
+  padding-left: 20px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.validation-list li {
+  margin-bottom: 8px;
+}
+
 /* Diff View Styles */
 .diff-view {
   font-family: monospace;
