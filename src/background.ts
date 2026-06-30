@@ -13,14 +13,23 @@ function matchPattern(url: string, patterns: string[]): boolean {
     const regex = new RegExp(regexStr);
     if (regex.test(url)) return true;
     
+    // Decode URL for smarter matching (to handle %2F instead of /)
+    let decodedUrl = url;
+    try {
+      decodedUrl = decodeURIComponent(url);
+    } catch (e) {
+      // Ignore malformed URIs
+    }
+    
     // 2. Smarter Pukiwiki match
     const pwMatch = pattern.match(/^(https?:\/\/[^?]+\/\?)(?!cmd=)(.*)$/);
     if (pwMatch) {
       const baseUrl = pwMatch[1].replace(/[.+?^${}()|[\]\\]/g, '\\$&');
       const pagePattern = pwMatch[2].replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-      const smartRegexStr = '^' + baseUrl + '(?:cmd=[^&]+&page=)?' + pagePattern + '$';
+      // Allow trailing parameters like &refer=... after the page name
+      const smartRegexStr = '^' + baseUrl + '(?:cmd=[^&]+&page=)?' + pagePattern + '(?:&.*)?$';
       const smartRegex = new RegExp(smartRegexStr);
-      if (smartRegex.test(url)) return true;
+      if (smartRegex.test(decodedUrl)) return true;
     }
   }
   return false;
