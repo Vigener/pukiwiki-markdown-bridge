@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (shortcutApply) {
     applyBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
+    editPageBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
   }
   validationCancelBtn.innerHTML += `<span class="shortcut-key">${escKey}</span>`;
   validationActionBtn.innerHTML += `<span class="shortcut-key">${cmdKey}</span>`;
@@ -267,7 +268,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (diffModal.style.display === 'flex') {
         diffActionBtn.click();
       } else if (shortcutApply) {
-        applyBtn.click();
+        if (applyBtn.style.display !== 'none') {
+          applyBtn.click();
+        } else if (editPageBtn.style.display !== 'none') {
+          editPageBtn.click();
+        }
       }
     } else if (e.code === 'Escape') {
       if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex') {
