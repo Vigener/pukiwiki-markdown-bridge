@@ -25,11 +25,11 @@ PukiWikiの編集を、よりモダンなMarkdownエディタ（[EasyMDE](https:
 ### URLの許可設定
 意図しないページでの誤作動を防ぐため、拡張機能を有効にしたいPukiWikiのURLを登録する必要があります。
 例えば、ご自身のページが以下のようなURLである場合：
-`https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Architecture-team/igarashi`
+`https://example.com/pukiwiki/?Architecture-team/igarashi`
 
 設定画面には、末尾にワイルドカード（`*`）を付けた以下の形式で入力してください。
 ```text
-https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Architecture-team/igarashi*
+https://example.com/pukiwiki/?Architecture-team/igarashi*
 ```
 
 **【スマートマッチ機能について】**

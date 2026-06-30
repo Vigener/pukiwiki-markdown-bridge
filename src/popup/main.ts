@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (!applyBtn || !textarea) return;
 
-  const DEFAULT_URLS = ['https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Your_Team/Your_Name*'];
+  const DEFAULT_URLS = ['https://example.com/pukiwiki/?Your_Team/Your_Name*'];
   const items = await chrome.storage.sync.get({ allowedUrls: DEFAULT_URLS });
   if (items.allowedUrls.length === 1 && items.allowedUrls[0] === DEFAULT_URLS[0]) {
     chrome.runtime.openOptionsPage();

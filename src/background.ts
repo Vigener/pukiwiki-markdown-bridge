@@ -1,11 +1,11 @@
 const DEFAULT_URLS = [
-  'https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Your_Team/Your_Name*'
+  'https://example.com/pukiwiki/?Your_Team/Your_Name*'
 ];
 
 function matchPattern(url: string, patterns: string[]): boolean {
   for (const pattern of patterns) {
-    if (pattern === 'https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Your_Team/Your_Name*') {
-      if (url.startsWith('https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/')) return true;
+    if (pattern === 'https://example.com/pukiwiki/?Your_Team/Your_Name*') {
+      if (url.startsWith('https://example.com/pukiwiki/')) return true;
     }
 
     // 1. Exact or wildcard match

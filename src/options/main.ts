@@ -1,5 +1,5 @@
 const DEFAULT_URLS = [
-  'https://www.hpcs.cs.tsukuba.ac.jp/internal/pukiwiki/?Your_Team/Your_Name*'
+  'https://example.com/pukiwiki/?Your_Team/Your_Name*'
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
