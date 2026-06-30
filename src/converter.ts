@@ -14,11 +14,12 @@ export function pukiwikiToMarkdown(pwText: string): string {
 
     // Headings
     if (line.startsWith('*')) {
-      const match = line.match(/^(\*{1,3})\s*(.*)$/);
+      const match = line.match(/^(\*{1,3})(\s*)(.*)$/);
       if (match) {
         const level = match[1].length;
-        const text = match[2];
-        line = '#'.repeat(level) + ' ' + text;
+        const noSpace = match[2] === '' ? ' <!--nospace-->' : '';
+        const text = match[3];
+        line = '#'.repeat(level) + ' ' + text + noSpace;
       }
     } 
     // Horizontal Rules
@@ -31,34 +32,37 @@ export function pukiwikiToMarkdown(pwText: string): string {
       }
     }
     // Unordered Lists
-    else if (line.match(/^(-+)\s*(.*)$/)) {
-      const match = line.match(/^(-+)\s*(.*)$/);
+    else if (line.match(/^(-+)(\s*)(.*)$/)) {
+      const match = line.match(/^(-+)(\s*)(.*)$/);
       if (match) {
         const depth = match[1].length;
+        const noSpace = match[2] === '' ? ' <!--nospace-->' : '';
         const indent = '  '.repeat(depth - 1);
-        line = indent + '- ' + match[2];
+        line = indent + '- ' + match[3] + noSpace;
         olCounters.fill(0);
       }
     }
     // Ordered Lists
-    else if (line.match(/^(\++)\s*(.*)$/)) {
-      const match = line.match(/^(\++)\s*(.*)$/);
+    else if (line.match(/^(\++)(\s*)(.*)$/)) {
+      const match = line.match(/^(\++)(\s*)(.*)$/);
       if (match) {
         const depth = match[1].length;
+        const noSpace = match[2] === '' ? ' <!--nospace-->' : '';
         const indent = '  '.repeat(depth - 1);
         olCounters[depth - 1]++;
         olCounters.fill(0, depth);
-        line = indent + `${olCounters[depth - 1]}. ` + match[2];
+        line = indent + `${olCounters[depth - 1]}. ` + match[3] + noSpace;
       }
     }
     // Quotes
     else if (line.match(/^>{1,3}/)) {
-      const match = line.match(/^(>{1,3})\s*(.*)$/);
+      const match = line.match(/^(>{1,3})(\s*)(.*)$/);
       if (match) {
         const level = match[1].length;
-        const text = match[2];
+        const noSpace = match[2] === '' ? ' <!--nospace-->' : '';
+        const text = match[3];
         const prefix = '> '.repeat(level);
-        line = prefix + text;
+        line = prefix + text + noSpace;
       }
     }
     // Comments
@@ -97,11 +101,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
           }
         }
         
-        if (hasOptions) {
-          line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
-        } else {
-          line = `![${alt}](${file})`;
-        }
+        line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
       }
       olCounters.fill(0);
     }
@@ -139,6 +139,10 @@ export function pukiwikiToMarkdown(pwText: string): string {
     }
     
     // 2. Inline Elements
+    
+    // Escape literal asterisks and tildes first
+    line = line.replace(/\*/g, '\\*');
+    line = line.replace(/~/g, '\\~');
     
     // Line breaks (&br; and ~)
     line = line.replace(/&br;/g, '<br>');
@@ -181,11 +185,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
         }
       }
       
-      if (hasOptions) {
-        return `![${alt}](${file})<!--&ref(${inner})-->`;
-      } else {
-        return `![${alt}](${file})`;
-      }
+      return `![${alt}](${file})<!--&ref(${inner})-->`;
     });
     
     // Italic
@@ -195,16 +195,18 @@ export function pukiwikiToMarkdown(pwText: string): string {
     // Strikethrough
     line = line.replace(/%%(.*?)%%/g, '~~$1~~');
     
-    // Links
-    // [[Alias>URL]]
-    line = line.replace(/\[\[(.*?)[>|:](.*?)\]\]/g, '[$1]($2)');
+    // [[Alias>URL]] or [[Alias:URL]]
+    line = line.replace(/\[\[(.*?)([>|:])(.*?)\]\]/g, (match, p1, sep, p2) => {
+      if (sep === ':') return `[${p1}](${p2})<!--:-->`;
+      return `[${p1}](${p2})`;
+    });
     // [[PageName]] or [[URL]]
     line = line.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
       // If it looks like a URL, keep it as an autolink
       if (p1.startsWith('http')) {
         return `<${p1}>`;
       }
-      return `[${p1}](${p1})`;
+      return `[${p1}](./${p1})`;
     });
 
     mdLines.push(line);
@@ -314,31 +316,46 @@ export function markdownToPukiwiki(mdText: string): string {
     });
 
     // Bold
-    // Use .+? to avoid matching empty strings which caused the `''''''` issue
-    line = line.replace(/\*\*(.+?)\*\*/g, '\'\'$1\'\'');
-    
+    line = line.replace(/(?<!\\)\*\*(?!\s)(.+?)(?<!\s)(?<!\\)\*\*/g, "''$1''");
     // Italic
-    line = line.replace(/\*(.+?)\*/g, '\'\'\'$1\'\'\'');
-    
+    line = line.replace(/(?<!\\)\*(?!\s)(.+?)(?<!\s)(?<!\\)\*/g, "'''$1'''");
     // Strikethrough
     line = line.replace(/~~(.+?)~~/g, '%%$1%%');
+
+    // Unescape literal asterisks and tildes
+    line = line.replace(/\\\*/g, '*');
+    line = line.replace(/\\~/g, '~');
     
     // Links
-    // [[WikiLink]] (Obsidian style)
-    line = line.replace(/\[\[(.*?)\]\]/g, '[[$1>./$1]]');
-    // [Link Name](URL)
-    line = line.replace(/\[(.*?)\]\((.*?)\)/g, '[[$1>$2]]');
+    // [[Alias>URL]] or [[Alias:URL]] or [[Alias]]
+    line = line.replace(/\[(.*?)\]\((.*?)\)(<!--:-->)?/g, (match, text, url, colon) => {
+      if (text === url || url === './' + text) return `[[${text}]]`;
+      if (colon) return `[[${text}:${url}]]`;
+      return `[[${text}>${url}]]`;
+    });
     // <URL>
     line = line.replace(/<(http.*?)>/g, '[[$1]]');
 
     // 2. Block Elements
 
+    // Preformatted
+    if (line.startsWith('    ') && listIndentStack.length === 1 && listIndentStack[0] === 0) {
+      line = ' ' + line.substring(4);
+      pwLines.push(line);
+      continue;
+    }
+
     // Headings
     const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
-      const text = headingMatch[2];
-      line = '*'.repeat(level) + ' ' + text;
+      let text = headingMatch[2];
+      let noSpace = false;
+      if (text === '<!--nospace-->' || text.endsWith(' <!--nospace-->')) {
+        noSpace = true;
+        text = text.replace(/ ?<!--nospace-->$/, '');
+      }
+      line = '*'.repeat(level) + (noSpace ? '' : ' ') + text;
     }
     // Horizontal Rules
     else if (line.match(/^(\s*[-*_]\s*){3,}$/)) {
@@ -367,8 +384,15 @@ export function markdownToPukiwiki(mdText: string): string {
           listIndentStack[listIndentStack.length - 1] = spaces;
         }
 
+        let text = match[2];
+        let noSpace = false;
+        if (text === '<!--nospace-->' || text.endsWith(' <!--nospace-->')) {
+          noSpace = true;
+          text = text.replace(/ ?<!--nospace-->$/, '');
+        }
+        
         const depth = Math.min(3, listIndentStack.length);
-        line = '-'.repeat(depth) + ' ' + match[2];
+        line = '-'.repeat(depth) + (noSpace ? '' : ' ') + text;
       }
     }
     // Ordered Lists
@@ -393,8 +417,15 @@ export function markdownToPukiwiki(mdText: string): string {
           listIndentStack[listIndentStack.length - 1] = spaces;
         }
 
+        let text = match[2];
+        let noSpace = false;
+        if (text === '<!--nospace-->' || text.endsWith(' <!--nospace-->')) {
+          noSpace = true;
+          text = text.replace(/ ?<!--nospace-->$/, '');
+        }
+
         const depth = Math.min(3, listIndentStack.length);
-        line = '+'.repeat(depth) + ' ' + match[2];
+        line = '+'.repeat(depth) + (noSpace ? '' : ' ') + text;
       }
     }
     // Quotes
@@ -402,14 +433,16 @@ export function markdownToPukiwiki(mdText: string): string {
       const match = line.match(/^(> > >|> >|>)\s*(.*)$/);
       if (match) {
         const prefixStr = match[1].replace(/ /g, ''); // Convert "> >" to ">>"
-        line = prefixStr + ' ' + match[2];
+        let text = match[2];
+        let noSpace = false;
+        if (text === '<!--nospace-->' || text.endsWith(' <!--nospace-->')) {
+          noSpace = true;
+          text = text.replace(/ ?<!--nospace-->$/, '');
+        }
+        line = prefixStr + (noSpace ? '' : ' ') + text;
       }
     }
 
-    // Preformatted
-    else if (line.startsWith('    ')) {
-      line = ' ' + line.substring(4);
-    }
     // Comments
     else if (line.match(/^<!--(.*)-->$/)) {
       const match = line.match(/^<!--(.*)-->$/);
