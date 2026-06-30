@@ -100,8 +100,11 @@ export function pukiwikiToMarkdown(pwText: string): string {
             hasOptions = true;
           }
         }
-        
-        line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
+        if (!hasOptions && alt === '') {
+          line = `![${alt}](${file})`;
+        } else {
+          line = `![${alt}](${file})<!--#ref(${match[1]})-->`;
+        }
       }
       olCounters.fill(0);
     }
@@ -185,6 +188,9 @@ export function pukiwikiToMarkdown(pwText: string): string {
         }
       }
       
+      if (!hasOptions && alt === '') {
+        return `![${alt}](${file})`;
+      }
       return `![${alt}](${file})<!--&ref(${inner})-->`;
     });
     
