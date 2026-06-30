@@ -3,7 +3,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const textarea = document.querySelector('textarea[name="msg"]') as HTMLTextAreaElement;
 
   if (!textarea) {
-    console.warn('pukiwiki-markdown-bridge: textarea[name="msg"] not found on this page.');
     // We send empty or undefined if not found
     sendResponse({ error: 'Not found' });
     return false;
