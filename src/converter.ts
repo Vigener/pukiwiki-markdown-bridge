@@ -9,6 +9,8 @@ export function pukiwikiToMarkdown(pwText: string): string {
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
+    let isTableLine = false;
+    let tableSeparator = '';
 
     // 1. Block Elements
 
@@ -235,8 +237,6 @@ export function markdownToPukiwiki(mdText: string): string {
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
-    let isTableLine = false;
-    let tableSeparator = '';
     let isList = false;
 
     // Table Separator (skip)
