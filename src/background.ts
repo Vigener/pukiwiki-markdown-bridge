@@ -26,8 +26,8 @@ function matchPattern(url: string, patterns: string[]): boolean {
     if (pwMatch) {
       const baseUrl = pwMatch[1].replace(/[.+?^${}()|[\]\\]/g, '\\$&');
       const pagePattern = pwMatch[2].replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-      // Allow trailing parameters like &refer=... after the page name
-      const smartRegexStr = '^' + baseUrl + '(?:cmd=[^&]+&page=)?' + pagePattern + '(?:&.*)?$';
+      // Allow the page pattern to appear directly, or in the 'page' or 'refer' parameters
+      const smartRegexStr = '^' + baseUrl + '(?:.*(?:&|^)(?:page|refer)=)?' + pagePattern + '(?:&.*)?$';
       const smartRegex = new RegExp(smartRegexStr);
       if (smartRegex.test(decodedUrl)) return true;
     }
@@ -61,4 +61,10 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       });
     }
   });
+});
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.runtime.openOptionsPage();
+  }
 });
