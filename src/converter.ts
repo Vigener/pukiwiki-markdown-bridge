@@ -117,21 +117,20 @@ export function pukiwikiToMarkdown(pwText: string): string {
         line = line.substring(0, line.length - option.length);
       }
       
-      mdLines.push(line + (option ? ` <!--${option}-->` : ''));
+      line = line + (option ? ` <!--${option}-->` : '');
+      isTableLine = true;
       
       if (!inTable) {
         inTable = true;
         const cols = line.split('|').length - 2;
         if (cols > 0) {
-          let separator = '|';
+          tableSeparator = '|';
           for (let j = 0; j < cols; j++) {
-            separator += '---|';
+            tableSeparator += '---|';
           }
-          mdLines.push(separator);
         }
       }
       olCounters.fill(0);
-      continue;
     }
     else {
       inTable = false;
@@ -212,10 +211,13 @@ export function pukiwikiToMarkdown(pwText: string): string {
       if (p1.startsWith('http')) {
         return `<${p1}>`;
       }
-      return `[${p1}](./${p1})`;
+      return `[${p1}](./${p1})<!--PW_LINK-->`;
     });
 
     mdLines.push(line);
+    if (isTableLine && tableSeparator) {
+      mdLines.push(tableSeparator);
+    }
   }
 
   return mdLines.join('\n');
@@ -233,6 +235,8 @@ export function markdownToPukiwiki(mdText: string): string {
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
+    let isTableLine = false;
+    let tableSeparator = '';
     let isList = false;
 
     // Table Separator (skip)
@@ -341,8 +345,8 @@ export function markdownToPukiwiki(mdText: string): string {
 
     // Links
     // [[Alias>URL]] or [[Alias:URL]] or [[Alias]]
-    line = line.replace(/\[(.*?)\]\((.*?)\)(<!--:-->)?/g, (match, text, url, colon) => {
-      if (text === url || url === './' + text) return `[[${text}]]`;
+    line = line.replace(/\[(.*?)\]\((.*?)\)(<!--:-->)?(<!--PW_LINK-->)?/g, (match, text, url, colon, pwLink) => {
+      if (pwLink) return `[[${text}]]`;
       if (colon) return `[[${text}:${url}]]`;
       return `[[${text}>${url}]]`;
     });
@@ -352,9 +356,10 @@ export function markdownToPukiwiki(mdText: string): string {
     // 2. Block Elements
 
     // Preformatted
-    if (line.startsWith('    ') && listIndentStack.length === 1 && listIndentStack[0] === 0) {
+    if (line.startsWith('    ')) {
       line = ' ' + line.substring(4);
       pwLines.push(line);
+      lastWasList = false;
       continue;
     }
 
