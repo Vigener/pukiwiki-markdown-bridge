@@ -1,6 +1,14 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // PukiWiki typically uses a textarea with name="msg"
-  const textarea = document.querySelector('textarea[name="msg"]') as HTMLTextAreaElement;
+  let textarea = document.querySelector('textarea[name="msg"]') as HTMLTextAreaElement;
+  
+  if (!textarea) {
+    // Fallback: just find any textarea if there's only one, or the largest one
+    const textareas = document.querySelectorAll('textarea');
+    if (textareas.length > 0) {
+      textarea = textareas[0] as HTMLTextAreaElement;
+    }
+  }
 
   if (!textarea) {
     // We send empty or undefined if not found

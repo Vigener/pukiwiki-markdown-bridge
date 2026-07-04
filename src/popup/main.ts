@@ -173,7 +173,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (urlObj.search) {
               if (!urlObj.search.includes('cmd=')) {
                 const pageName = urlObj.search.substring(1);
-                editUrl = `${urlObj.origin}${urlObj.pathname}?cmd=edit&page=${pageName}`;
+                let encodedPageName = pageName;
+                try {
+                  encodedPageName = encodeURIComponent(decodeURIComponent(pageName));
+                } catch(e) {}
+                editUrl = `${urlObj.origin}${urlObj.pathname}?cmd=edit&page=${encodedPageName}`;
               }
             } else {
               editUrl = `${urlObj.origin}${urlObj.pathname}?cmd=edit`;
