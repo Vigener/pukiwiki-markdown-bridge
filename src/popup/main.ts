@@ -5,6 +5,7 @@ import * as Diff from 'diff';
 document.addEventListener('DOMContentLoaded', async () => {
   const applyBtn = document.getElementById('apply-btn') as HTMLButtonElement;
   const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
+  const templateBtn = document.getElementById('template-btn') as HTMLButtonElement;
   const editPageBtn = document.getElementById('edit-page-btn') as HTMLButtonElement;
   const textarea = document.getElementById('markdown-editor') as HTMLTextAreaElement;
   
@@ -29,6 +30,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const roundtripCancelBtn = document.getElementById('roundtrip-cancel-btn') as HTMLButtonElement;
   const roundtripActionBtn = document.getElementById('roundtrip-action-btn') as HTMLButtonElement;
 
+  const templateModal = document.getElementById('template-modal') as HTMLDivElement;
+  const templateListContainer = document.getElementById('template-list-container') as HTMLDivElement;
+  const templateCancelBtn = document.getElementById('template-cancel-btn') as HTMLButtonElement;
+
+  const templateConfirmModal = document.getElementById('template-confirm-modal') as HTMLDivElement;
+  const templateConfirmTitle = document.getElementById('template-confirm-title') as HTMLSpanElement;
+  const templateConfirmPreview = document.getElementById('template-confirm-preview') as HTMLDivElement;
+  const templateConfirmCancelBtn = document.getElementById('template-confirm-cancel-btn') as HTMLButtonElement;
+  const templateConfirmOverwriteBtn = document.getElementById('template-confirm-overwrite-btn') as HTMLButtonElement;
+  const templateConfirmAppendBtn = document.getElementById('template-confirm-append-btn') as HTMLButtonElement;
+  const templateConfirmInsertBtn = document.getElementById('template-confirm-insert-btn') as HTMLButtonElement;
+
   if (!applyBtn || !textarea) return;
 
   const DEFAULT_URLS = ['https://example.com/pukiwiki/?Your_Team/Your_Name*'];
@@ -36,9 +49,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     allowedUrls: DEFAULT_URLS,
     shortcutApply: true,
     diffConfirmMode: 'deletions_only',
-    markdownRoundtripCheck: true
+    markdownRoundtripCheck: true,
+    templates: []
   });
-  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck } = items;
+  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck, templates } = items;
 
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const cmdKey = isMac ? '⌘+Enter' : 'Ctrl+Enter';
@@ -67,6 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     diffModal.style.display = 'none';
     validationModal.style.display = 'none';
     roundtripModal.style.display = 'none';
+    templateModal.style.display = 'none';
+    templateConfirmModal.style.display = 'none';
     modalActionCallback = null;
   };
   
@@ -123,6 +139,92 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   
 
+
+  // Template Action
+  let selectedTemplate: any = null;
+
+  const showTemplateModal = () => {
+    if (templates.length === 0) {
+      alert('保存されているテンプレートはありません。オプション画面から追加してください。');
+      return;
+    }
+    
+    templateListContainer.innerHTML = '';
+    templates.forEach((t: any) => {
+      const item = document.createElement('div');
+      item.className = 'template-item';
+      
+      const title = document.createElement('div');
+      title.className = 'template-item-title';
+      title.textContent = t.title;
+      
+      const preview = document.createElement('div');
+      preview.className = 'template-item-preview';
+      preview.textContent = t.content.substring(0, 50) + (t.content.length > 50 ? '...' : '');
+      
+      item.appendChild(title);
+      item.appendChild(preview);
+      
+      item.addEventListener('click', () => {
+        selectedTemplate = t;
+        templateModal.style.display = 'none';
+        
+        const currentText = easyMDE.value();
+        if (currentText.trim() === '') {
+          // Empty, just insert
+          easyMDE.value(t.content);
+        } else {
+          // Show confirm
+          templateConfirmTitle.textContent = t.title;
+          
+          // Generate diff preview (for overwrite)
+          const diff = Diff.diffLines(currentText, t.content);
+          templateConfirmPreview.innerHTML = '';
+          diff.forEach((part) => {
+            const span = document.createElement('span');
+            span.className = part.added ? 'diff-line diff-added' :
+                             part.removed ? 'diff-line diff-removed' :
+                             'diff-line diff-unchanged';
+            span.textContent = part.value;
+            templateConfirmPreview.appendChild(span);
+          });
+          
+          templateConfirmModal.style.display = 'flex';
+        }
+      });
+      templateListContainer.appendChild(item);
+    });
+    
+    templateModal.style.display = 'flex';
+  };
+
+  templateBtn.addEventListener('click', showTemplateModal);
+
+  templateCancelBtn.addEventListener('click', closeModal);
+  templateConfirmCancelBtn.addEventListener('click', closeModal);
+  
+  templateConfirmOverwriteBtn.addEventListener('click', () => {
+    if (selectedTemplate) {
+      easyMDE.value(selectedTemplate.content);
+    }
+    closeModal();
+  });
+  
+  templateConfirmAppendBtn.addEventListener('click', () => {
+    if (selectedTemplate) {
+      const currentText = easyMDE.value();
+      easyMDE.value(currentText + (currentText.endsWith('\n') ? '' : '\n') + selectedTemplate.content);
+    }
+    closeModal();
+  });
+
+  templateConfirmInsertBtn.addEventListener('click', () => {
+    if (selectedTemplate) {
+      const cm = easyMDE.codemirror;
+      cm.replaceSelection(selectedTemplate.content);
+    }
+    closeModal();
+  });
 
   // Initialize EasyMDE
   const easyMDE = new EasyMDE({
@@ -294,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     } else if (e.code === 'Escape') {
-      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex' || roundtripModal.style.display === 'flex') {
+      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex' || roundtripModal.style.display === 'flex' || templateModal.style.display === 'flex' || templateConfirmModal.style.display === 'flex') {
         e.preventDefault();
         e.stopPropagation();
         closeModal();

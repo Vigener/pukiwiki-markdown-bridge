@@ -1,0 +1,1 @@
+import { pukiwikiToMarkdown, markdownToPukiwiki } from './dist/assets/popup-bICt7RI4.js'; // The bundle contains it probably? No, let's just use ts-node with tsconfig properly, or better yet, compile converter.ts to js directly

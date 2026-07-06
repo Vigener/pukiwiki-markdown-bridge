@@ -10,17 +10,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
   const statusEl = document.getElementById('status') as HTMLDivElement;
 
+  // Template UI elements
+  const templateListEl = document.getElementById('templateList') as HTMLDivElement;
+  const templateFormTitleEl = document.getElementById('templateFormTitle') as HTMLHeadingElement;
+  const editTemplateIdEl = document.getElementById('editTemplateId') as HTMLInputElement;
+  const templateTitleEl = document.getElementById('templateTitle') as HTMLInputElement;
+  const templateContentEl = document.getElementById('templateContent') as HTMLTextAreaElement;
+  const saveTemplateBtn = document.getElementById('saveTemplateBtn') as HTMLButtonElement;
+  const cancelTemplateBtn = document.getElementById('cancelTemplateBtn') as HTMLButtonElement;
+
+  interface Template {
+    id: string;
+    title: string;
+    content: string;
+  }
+  let templates: Template[] = [];
+
   // Load existing rules
   chrome.storage.sync.get({ 
     allowedUrls: DEFAULT_URLS,
     shortcutApply: true,
     diffConfirmMode: 'deletions_only',
-    markdownRoundtripCheck: true
+    markdownRoundtripCheck: true,
+    templates: []
   }, (items) => {
     allowedUrlsEl.value = items.allowedUrls.join('\n');
     shortcutApplyEl.checked = items.shortcutApply;
     diffConfirmModeEl.value = items.diffConfirmMode;
     markdownRoundtripCheckEl.checked = items.markdownRoundtripCheck;
+    
+    // Load templates
+    templates = items.templates || [];
+    renderTemplates();
   });
 
   // Save rules function
@@ -64,4 +85,106 @@ document.addEventListener('DOMContentLoaded', () => {
       saveOptions();
     }
   });
+
+  // --- Template Functions ---
+
+  const renderTemplates = () => {
+    templateListEl.innerHTML = '';
+    if (templates.length === 0) {
+      templateListEl.innerHTML = '<span style="color: #999;">保存されているテンプレートはありません。</span>';
+      return;
+    }
+    
+    templates.forEach(t => {
+      const itemDiv = document.createElement('div');
+      itemDiv.style.display = 'flex';
+      itemDiv.style.justifyContent = 'space-between';
+      itemDiv.style.alignItems = 'center';
+      itemDiv.style.padding = '8px';
+      itemDiv.style.borderBottom = '1px solid #eee';
+      
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = t.title;
+      titleSpan.style.fontWeight = 'bold';
+      
+      const actionsDiv = document.createElement('div');
+      
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '編集';
+      editBtn.style.padding = '4px 8px';
+      editBtn.style.fontSize = '12px';
+      editBtn.style.marginRight = '8px';
+      editBtn.style.backgroundColor = '#3498db';
+      editBtn.addEventListener('click', () => {
+        editTemplateIdEl.value = t.id;
+        templateTitleEl.value = t.title;
+        templateContentEl.value = t.content;
+        templateFormTitleEl.textContent = 'テンプレートを編集';
+        saveTemplateBtn.textContent = '更新';
+        cancelTemplateBtn.style.display = 'inline-block';
+      });
+      
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '削除';
+      delBtn.style.padding = '4px 8px';
+      delBtn.style.fontSize = '12px';
+      delBtn.style.backgroundColor = '#e74c3c';
+      delBtn.addEventListener('click', () => {
+        if (confirm(`テンプレート「${t.title}」を削除しますか？`)) {
+          templates = templates.filter(temp => temp.id !== t.id);
+          saveTemplatesToStorage();
+        }
+      });
+      
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(delBtn);
+      itemDiv.appendChild(titleSpan);
+      itemDiv.appendChild(actionsDiv);
+      templateListEl.appendChild(itemDiv);
+    });
+  };
+
+  const saveTemplatesToStorage = () => {
+    chrome.storage.sync.set({ templates }, () => {
+      renderTemplates();
+      resetTemplateForm();
+    });
+  };
+
+  const resetTemplateForm = () => {
+    editTemplateIdEl.value = '';
+    templateTitleEl.value = '';
+    templateContentEl.value = '';
+    templateFormTitleEl.textContent = '新規テンプレート追加';
+    saveTemplateBtn.textContent = '追加 / 更新';
+    cancelTemplateBtn.style.display = 'none';
+  };
+
+  saveTemplateBtn.addEventListener('click', () => {
+    const title = templateTitleEl.value.trim();
+    const content = templateContentEl.value.trim();
+    
+    if (!title || !content) {
+      alert('タイトルと本文を入力してください。');
+      return;
+    }
+    
+    const id = editTemplateIdEl.value;
+    if (id) {
+      // Update
+      const index = templates.findIndex(t => t.id === id);
+      if (index !== -1) {
+        templates[index] = { id, title, content };
+      }
+    } else {
+      // Create new
+      const newId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+      templates.push({ id: newId, title, content });
+    }
+    
+    saveTemplatesToStorage();
+  });
+
+  cancelTemplateBtn.addEventListener('click', resetTemplateForm);
+
 });

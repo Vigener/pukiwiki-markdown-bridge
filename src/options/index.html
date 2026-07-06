@@ -77,7 +77,36 @@
     </select>
   </div>
 
-  <button id="saveBtn">保存</button>
+  <hr style="margin: 30px 0; border: none; border-top: 1px solid #ccc;">
+
+  <h2>テンプレート設定 (Templates)</h2>
+  <div class="form-group">
+    <p class="hint" style="margin-bottom: 12px;">よく使う定型文を保存しておき、エディタから一発で呼び出せます。</p>
+    <div id="templateList" style="margin-bottom: 16px; border: 1px solid #eee; border-radius: 4px; padding: 8px; min-height: 40px;">
+      <!-- JSでリストを生成 -->
+    </div>
+    
+    <div style="border: 1px solid #ddd; padding: 16px; border-radius: 4px; background-color: #f9f9f9;">
+      <h3 style="margin-top: 0; font-size: 16px;" id="templateFormTitle">新規テンプレート追加</h3>
+      <input type="hidden" id="editTemplateId" value="">
+      <div style="margin-bottom: 8px;">
+        <label for="templateTitle" style="display:block; margin-bottom: 4px; font-weight: bold; font-size: 14px;">タイトル:</label>
+        <input type="text" id="templateTitle" style="width: 100%; padding: 6px; box-sizing: border-box;" placeholder="例: 毎週の進捗">
+      </div>
+      <div style="margin-bottom: 8px;">
+        <label for="templateContent" style="display:block; margin-bottom: 4px; font-weight: bold; font-size: 14px;">本文 (Markdown):</label>
+        <textarea id="templateContent" style="height: 100px; padding: 6px; box-sizing: border-box;" placeholder="# やったこと..."></textarea>
+      </div>
+      <div>
+        <button id="saveTemplateBtn" style="background-color: #2ecc71;">追加 / 更新</button>
+        <button id="cancelTemplateBtn" style="background-color: #95a5a6; display: none;">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <hr style="margin: 30px 0; border: none; border-top: 1px solid #ccc;">
+
+  <button id="saveBtn">全体設定を保存</button>
   <div id="status">保存しました。</div>
 
   <script type="module" src="./main.ts"></script>
