@@ -77,6 +77,15 @@
     </select>
   </div>
 
+  <div class="form-group">
+    <label for="dateLinkFormat">カレンダー(日付リンク)のフォーマット:</label><br>
+    <input type="text" id="dateLinkFormat" style="width: 100%; padding: 6px; box-sizing: border-box; margin-top: 8px;" placeholder="[{MM}/{DD}](./{YYYY}{MM}{DD})">
+    <div class="hint" style="margin-top: 4px;">
+      利用可能な変数: <code>{YYYY}</code>(4桁年), <code>{YY}</code>(2桁年), <code>{MM}</code>(月), <code>{DD}</code>(日) <br>
+      デフォルト: <code>[{MM}/{DD}](./{YYYY}{MM}{DD})</code>
+    </div>
+  </div>
+
   <hr style="margin: 30px 0; border: none; border-top: 1px solid #ccc;">
 
   <h2>テンプレート設定 (Templates)</h2>

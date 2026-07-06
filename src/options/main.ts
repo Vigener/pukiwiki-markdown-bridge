@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const shortcutApplyEl = document.getElementById('shortcutApply') as HTMLInputElement;
   const diffConfirmModeEl = document.getElementById('diffConfirmMode') as HTMLSelectElement;
   const markdownRoundtripCheckEl = document.getElementById('markdownRoundtripCheck') as HTMLInputElement;
+  const dateLinkFormatEl = document.getElementById('dateLinkFormat') as HTMLInputElement;
   const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
   const statusEl = document.getElementById('status') as HTMLDivElement;
 
@@ -32,12 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     shortcutApply: true,
     diffConfirmMode: 'deletions_only',
     markdownRoundtripCheck: true,
+    dateLinkFormat: '[{MM}/{DD}](./{YYYY}{MM}{DD})',
     templates: []
   }, (items) => {
     allowedUrlsEl.value = items.allowedUrls.join('\n');
     shortcutApplyEl.checked = items.shortcutApply;
     diffConfirmModeEl.value = items.diffConfirmMode;
     markdownRoundtripCheckEl.checked = items.markdownRoundtripCheck;
+    dateLinkFormatEl.value = items.dateLinkFormat;
     
     // Load templates
     templates = items.templates || [];
@@ -61,12 +64,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const shortcutApply = shortcutApplyEl.checked;
     const diffConfirmMode = diffConfirmModeEl.value;
     const markdownRoundtripCheck = markdownRoundtripCheckEl.checked;
+    const dateLinkFormat = dateLinkFormatEl.value.trim() || '[{MM}/{DD}](./{YYYY}{MM}{DD})';
     
     chrome.storage.sync.set({ 
       allowedUrls: lines,
       shortcutApply: shortcutApply,
       diffConfirmMode: diffConfirmMode,
-      markdownRoundtripCheck: markdownRoundtripCheck
+      markdownRoundtripCheck: markdownRoundtripCheck,
+      dateLinkFormat: dateLinkFormat
     }, () => {
       statusEl.style.display = 'block';
       setTimeout(() => {

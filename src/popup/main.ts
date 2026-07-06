@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const applyBtn = document.getElementById('apply-btn') as HTMLButtonElement;
   const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
   const templateBtn = document.getElementById('template-btn') as HTMLButtonElement;
+  const calendarBtn = document.getElementById('calendar-btn') as HTMLButtonElement;
   const editPageBtn = document.getElementById('edit-page-btn') as HTMLButtonElement;
   const textarea = document.getElementById('markdown-editor') as HTMLTextAreaElement;
   
@@ -42,6 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const templateConfirmAppendBtn = document.getElementById('template-confirm-append-btn') as HTMLButtonElement;
   const templateConfirmInsertBtn = document.getElementById('template-confirm-insert-btn') as HTMLButtonElement;
 
+  const dateModal = document.getElementById('date-modal') as HTMLDivElement;
+  const datePicker = document.getElementById('date-picker') as HTMLInputElement;
+  const dateCancelBtn = document.getElementById('date-cancel-btn') as HTMLButtonElement;
+  const dateActionBtn = document.getElementById('date-action-btn') as HTMLButtonElement;
+
   if (!applyBtn || !textarea) return;
 
   const DEFAULT_URLS = ['https://example.com/pukiwiki/?Your_Team/Your_Name*'];
@@ -50,9 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     shortcutApply: true,
     diffConfirmMode: 'deletions_only',
     markdownRoundtripCheck: true,
+    dateLinkFormat: '[{MM}/{DD}](./{YYYY}{MM}{DD})',
     templates: []
   });
-  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck, templates } = items;
+  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck, dateLinkFormat, templates } = items;
 
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const cmdKey = isMac ? '⌘+Enter' : 'Ctrl+Enter';
@@ -83,6 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     roundtripModal.style.display = 'none';
     templateModal.style.display = 'none';
     templateConfirmModal.style.display = 'none';
+    dateModal.style.display = 'none';
     modalActionCallback = null;
   };
   
@@ -222,6 +230,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (selectedTemplate) {
       const cm = easyMDE.codemirror;
       cm.replaceSelection(selectedTemplate.content);
+    }
+    closeModal();
+  });
+
+  // Calendar Action
+  calendarBtn.addEventListener('click', () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    datePicker.value = `${yyyy}-${mm}-${dd}`;
+    dateModal.style.display = 'flex';
+  });
+
+  dateCancelBtn.addEventListener('click', closeModal);
+
+  dateActionBtn.addEventListener('click', () => {
+    if (datePicker.value) {
+      const [yyyy, mm, dd] = datePicker.value.split('-');
+      const yy = yyyy.substring(2);
+      
+      let formatted = dateLinkFormat
+        .replace(/{YYYY}/g, yyyy)
+        .replace(/{YY}/g, yy)
+        .replace(/{MM}/g, mm)
+        .replace(/{DD}/g, dd);
+        
+      easyMDE.codemirror.replaceSelection(formatted);
     }
     closeModal();
   });
@@ -396,7 +432,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     } else if (e.code === 'Escape') {
-      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex' || roundtripModal.style.display === 'flex' || templateModal.style.display === 'flex' || templateConfirmModal.style.display === 'flex') {
+      if (validationModal.style.display === 'flex' || diffModal.style.display === 'flex' || roundtripModal.style.display === 'flex' || templateModal.style.display === 'flex' || templateConfirmModal.style.display === 'flex' || dateModal.style.display === 'flex') {
         e.preventDefault();
         e.stopPropagation();
         closeModal();
