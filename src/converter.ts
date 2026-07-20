@@ -378,7 +378,7 @@ export function markdownToPukiwiki(mdText: string): string {
     }
 
     // Preformatted
-    if (line.startsWith('    ')) {
+    if (line.startsWith('    ') && !line.match(/^(\s*)([-+]|\d+\.)\s/)) {
       line = ' ' + line.substring(4);
       pwLines.push(line);
       lastWasList = false;
