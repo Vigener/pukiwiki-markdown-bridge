@@ -242,7 +242,11 @@ export function pukiwikiToMarkdown(pwText: string): string {
 /**
  * Markdown to PukiWiki Converter
  */
-export function markdownToPukiwiki(mdText: string): string {
+export interface ConverterOptions {
+  defaultImageZoom?: string;
+}
+
+export function markdownToPukiwiki(mdText: string, options?: ConverterOptions): string {
   const lines = mdText.split('\n');
   const pwLines: string[] = [];
 
@@ -324,7 +328,8 @@ export function markdownToPukiwiki(mdText: string): string {
       // Passing alt text like ref(file.jpg, alt) causes an "obsolete" error.
       // To prevent this, we simply drop the alt text in the generic fallback.
       // We also use &ref() instead of #ref() because Markdown images can be inline.
-      return `&ref(${file});`;
+      const zoomOpt = options?.defaultImageZoom ? `,zoom,${options.defaultImageZoom}%` : '';
+      return `&ref(${file}${zoomOpt});`;
     });
 
     // Color

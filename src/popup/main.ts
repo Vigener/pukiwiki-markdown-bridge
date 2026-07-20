@@ -57,9 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     diffConfirmMode: 'deletions_only',
     markdownRoundtripCheck: true,
     dateLinkFormat: '[{MM}/{DD}](./{YYYY}{MM}{DD})',
+    defaultImageZoom: '100',
     templates: []
   });
-  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck, dateLinkFormat, templates } = items;
+  const { allowedUrls, shortcutApply, diffConfirmMode, markdownRoundtripCheck, dateLinkFormat, defaultImageZoom, templates } = items;
 
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const cmdKey = isMac ? '⌘+Enter' : 'Ctrl+Enter';
@@ -459,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const performApply = async () => {
     if (!tab || !tab.id) return;
     const mdText = easyMDE.value();
-    const pwText = markdownToPukiwiki(mdText);
+    const pwText = markdownToPukiwiki(mdText, { defaultImageZoom });
     
     try {
       await chrome.tabs.sendMessage(tab.id, { type: 'SET_TEXT', text: pwText });
@@ -477,7 +478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Handle apply button
   applyBtn.addEventListener('click', async () => {
     const currentMdText = easyMDE.value();
-    const roundedMdText = pukiwikiToMarkdown(markdownToPukiwiki(currentMdText));
+    const roundedMdText = pukiwikiToMarkdown(markdownToPukiwiki(currentMdText, { defaultImageZoom }));
     
     const validationErrors = validateMarkdown(currentMdText);
     

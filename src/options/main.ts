@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const diffConfirmModeEl = document.getElementById('diffConfirmMode') as HTMLSelectElement;
   const markdownRoundtripCheckEl = document.getElementById('markdownRoundtripCheck') as HTMLInputElement;
   const dateLinkFormatEl = document.getElementById('dateLinkFormat') as HTMLInputElement;
+  const defaultImageZoomEl = document.getElementById('defaultImageZoom') as HTMLInputElement;
   const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
   const statusEl = document.getElementById('status') as HTMLDivElement;
 
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     diffConfirmMode: 'deletions_only',
     markdownRoundtripCheck: true,
     dateLinkFormat: '[{MM}/{DD}](./{YYYY}{MM}{DD})',
+    defaultImageZoom: '100',
     templates: []
   }, (items) => {
     allowedUrlsEl.value = items.allowedUrls.join('\n');
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     diffConfirmModeEl.value = items.diffConfirmMode;
     markdownRoundtripCheckEl.checked = items.markdownRoundtripCheck;
     dateLinkFormatEl.value = items.dateLinkFormat;
+    defaultImageZoomEl.value = items.defaultImageZoom;
     
     // Load templates
     templates = items.templates || [];
@@ -65,13 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const diffConfirmMode = diffConfirmModeEl.value;
     const markdownRoundtripCheck = markdownRoundtripCheckEl.checked;
     const dateLinkFormat = dateLinkFormatEl.value.trim() || '[{MM}/{DD}](./{YYYY}{MM}{DD})';
+    const defaultImageZoom = defaultImageZoomEl.value.trim();
     
     chrome.storage.sync.set({ 
       allowedUrls: lines,
       shortcutApply: shortcutApply,
       diffConfirmMode: diffConfirmMode,
       markdownRoundtripCheck: markdownRoundtripCheck,
-      dateLinkFormat: dateLinkFormat
+      dateLinkFormat: dateLinkFormat,
+      defaultImageZoom: defaultImageZoom
     }, () => {
       statusEl.style.display = 'block';
       setTimeout(() => {
