@@ -5,6 +5,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
   const lines = pwText.split('\n');
   const mdLines: string[] = [];
   let inTable = false;
+  let currentListDepth = 0;
   const olCounters = new Array(10).fill(0);
 
   for (let i = 0; i < lines.length; i++) {
@@ -16,6 +17,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
 
     // Headings
     if (line.startsWith('*')) {
+      currentListDepth = 0;
       const match = line.match(/^(\*{1,3})(\s*)(.*)$/);
       if (match) {
         const level = match[1].length;
@@ -26,6 +28,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
     } 
     // Horizontal Rules
     else if (line.match(/^----+\s*$/) || line === '#hr') {
+      currentListDepth = 0;
       const match = line.match(/^(----+)/);
       if (match) {
         line = match[1];
@@ -38,6 +41,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       const match = line.match(/^(-+)(\s*)(.*)$/);
       if (match) {
         const depth = match[1].length;
+        currentListDepth = depth;
         const noSpace = match[2] === '' ? ' <!--nospace-->' : '';
         const indent = '  '.repeat(depth - 1);
         line = indent + '- ' + match[3] + noSpace;
@@ -49,6 +53,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
       const match = line.match(/^(\++)(\s*)(.*)$/);
       if (match) {
         const depth = match[1].length;
+        currentListDepth = depth;
         const noSpace = match[2] === '' ? ' <!--nospace-->' : '';
         const indent = '  '.repeat(depth - 1);
         olCounters[depth - 1]++;
@@ -58,6 +63,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
     }
     // Quotes
     else if (line.match(/^>{1,3}/)) {
+      currentListDepth = 0;
       const match = line.match(/^(>{1,3})(\s*)(.*)$/);
       if (match) {
         const level = match[1].length;
@@ -75,6 +81,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
 
     // Preformatted
     else if (line.startsWith(' ')) {
+      currentListDepth = 0;
       line = '    ' + line.substring(1);
       olCounters.fill(0); // reset on non-list
     }
@@ -112,6 +119,7 @@ export function pukiwikiToMarkdown(pwText: string): string {
     }
     // Tables
     else if (line.startsWith('|') && (line.endsWith('|') || line.match(/\|[hfc]+$/))) {
+      currentListDepth = 0;
       let option = '';
       const optMatch = line.match(/\|([hfc]+)$/);
       if (optMatch) {
@@ -139,6 +147,12 @@ export function pukiwikiToMarkdown(pwText: string): string {
       // Regular text or empty line, reset ordered list counters
       if (!line.match(/^-{1,3}/)) {
         olCounters.fill(0);
+      }
+      
+      if (line.trim() === '') {
+        currentListDepth = 0;
+      } else if (currentListDepth > 0) {
+        line = '  '.repeat(currentListDepth) + line;
       }
     }
     
@@ -357,6 +371,12 @@ export function markdownToPukiwiki(mdText: string): string {
 
     // 2. Block Elements
 
+    if (line.trim() === '') {
+      lastWasList = false;
+    } else if (lastWasList && !line.match(/^(\s*)([-+*]|\d+\.)\s/)) {
+      line = line.trimStart();
+    }
+
     // Preformatted
     if (line.startsWith('    ')) {
       line = ' ' + line.substring(4);
@@ -480,7 +500,7 @@ export function markdownToPukiwiki(mdText: string): string {
 
     if (isList) {
       lastWasList = true;
-    } else if (line.trim() !== '' && !line.startsWith('//')) {
+    } else if (line.trim() === '') {
       lastWasList = false;
     }
 
