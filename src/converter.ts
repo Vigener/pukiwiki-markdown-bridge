@@ -328,10 +328,10 @@ export function markdownToPukiwiki(mdText: string): string {
 
     // Bold
     line = line.replace(/(?<!\\)\*\*(?!\s)(.+?)(?<!\s)(?<!\\)\*\*/g, "''$1''");
-    line = line.replace(/(?<!\\)__(?!\s)(.+?)(?<!\s)(?<!\\)__/g, "''$1''");
+    line = line.replace(/(?<![A-Za-z0-9\\])__(?!\s)(.+?)(?<!\s)(?<!\\)__(?![A-Za-z0-9])/g, "''$1''");
     // Italic
     line = line.replace(/(?<!\\)\*(?!\s)(.+?)(?<!\s)(?<!\\)\*/g, "'''$1'''");
-    line = line.replace(/(?<!\\)_(?!\s)(.+?)(?<!\s)(?<!\\)_/g, "'''$1'''");
+    line = line.replace(/(?<![A-Za-z0-9\\])_(?!\s)(.+?)(?<!\s)(?<!\\)_(?![A-Za-z0-9])/g, "'''$1'''");
     // Strikethrough
     line = line.replace(/~~(.+?)~~/g, '%%$1%%');
 
