@@ -75,6 +75,31 @@ export function pukiwikiToMarkdown(pwText: string): string {
     }
     // Comments
     else if (line.startsWith('//')) {
+      // Check if this is the start of a multiline comment block (// alone on a line)
+      if (line.trim() === '//') {
+        let j = i + 1;
+        let closeIdx = -1;
+        while (j < lines.length && lines[j].startsWith('//')) {
+          if (lines[j].trim() === '//') {
+            closeIdx = j;
+            if (j + 1 >= lines.length || !lines[j + 1].startsWith('//') || lines[j + 1].trim() === '//') {
+              break;
+            }
+          }
+          j++;
+        }
+        if (closeIdx !== -1) {
+          mdLines.push('<!--');
+          for (let k = i + 1; k < closeIdx; k++) {
+            let cText = lines[k].substring(2);
+            if (cText.startsWith(' ')) cText = cText.substring(1);
+            mdLines.push(cText);
+          }
+          mdLines.push('-->');
+          i = closeIdx;
+          continue;
+        }
+      }
       const commentText = line.substring(2);
       line = `<!--${commentText}-->`;
     }
@@ -253,9 +278,27 @@ export function markdownToPukiwiki(mdText: string, options?: ConverterOptions): 
   let listIndentStack: number[] = [0];
   let lastWasList = false;
 
+  let inMultiComment = false;
+
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
     let isList = false;
+
+    // Multiline Comments (<!-- ... -->)
+    if (!inMultiComment && line.match(/^<!--\s*$/)) {
+      inMultiComment = true;
+      pwLines.push('//');
+      continue;
+    }
+    if (inMultiComment) {
+      if (line.match(/^\s*-->$/)) {
+        inMultiComment = false;
+        pwLines.push('//');
+        continue;
+      }
+      pwLines.push(line === '' ? '//' : '// ' + line);
+      continue;
+    }
 
     // Table Separator (skip)
     if (line.match(/^\|(?:\s*[:-]+\s*\|)+$/)) {
